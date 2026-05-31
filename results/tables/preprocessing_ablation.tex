@@ -1,0 +1,14 @@
+\begin{table}
+\caption{Preprocessing ablation study (5-fold stratified CV, LR + TF-IDF 10k).}
+\label{tab:preproc}
+\begin{tabular}{lrr}
+\toprule
+Config & F1-macro & Std \\
+\midrule
+raw (no preprocessing) & 0.7183 & 0.0053 \\
+clean + stopwords + stemming & 0.7118 & 0.0089 \\
+clean + stopwords + lemmatization & 0.7086 & 0.0042 \\
+clean only & 0.7024 & 0.0113 \\
+\bottomrule
+\end{tabular}
+\end{table}

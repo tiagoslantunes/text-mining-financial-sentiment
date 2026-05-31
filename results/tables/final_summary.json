@@ -1,0 +1,28 @@
+{
+  "final_best_model": "Twitter-RoBERTa-large-2022-154m fine-tuned",
+  "final_feat_name": "Twitter-RoBERTa-large-2022-154m fine-tuned",
+  "cv_f1_macro": 0.8858848452022446,
+  "cv_accuracy": 0.9079953892905794,
+  "cv_precision": 0.8754420060423872,
+  "cv_recall": 0.8974766752451983,
+  "cv_f1_std": 0.00658644786028185,
+  "per_fold_f1": [
+    0.888743257255368,
+    0.8744633430902632,
+    0.8946378916214303,
+    0.8867794340905976,
+    0.8849501644547279
+  ],
+  "n_predictions": 2388,
+  "pred_distribution": {
+    "0": 375,
+    "1": 516,
+    "2": 1497
+  },
+  "baseline_f1": 0.8021,
+  "prev_single_model_f1": 0.8399177266142361,
+  "submission_source": "results/predictions/pred_robertalarge.csv",
+  "submission_tag": "robertalarge",
+  "stack_experiment_f1": 0.848290001034632,
+  "single_model_rule_note": "Submission is a single classification model per Project Guidelines 5.2."
+}

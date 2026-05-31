@@ -1,0 +1,7 @@
+{
+  "best_model": "Stacking (LR meta) | 5 base learners",
+  "best_f1_macro": 0.8268779150537092,
+  "baseline_f1": 0.8021,
+  "improvement": 0.024777915053709187,
+  "pred_source": "stacking_meta_lr"
+}

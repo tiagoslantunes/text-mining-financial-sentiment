@@ -1,0 +1,43 @@
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# ── Virtual envs ─────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Jupyter checkpoints ──────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Large computed artefacts (too big for GitHub, regenerable) ───
+data/processed/
+results/models/*.pkl
+results/models/*.npy
+results/models/w2v_skipgram.model
+results/models/w2v_skipgram.model.*
+results/predictions/*.npy
+
+# ── Raw data (check if you want to include train/test CSVs) ──────
+# Uncomment the next line to exclude raw data too:
+# data/raw/
+
+# ── OS noise ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── LaTeX build artefacts ────────────────────────────────────────
+*.aux
+*.log
+*.out
+*.xdv
+
+# ── Secrets / keys ───────────────────────────────────────────────
+.env
+*.key
