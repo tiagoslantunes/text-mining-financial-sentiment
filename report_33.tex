@@ -195,6 +195,32 @@ discriminative terms per class are: \textbf{Bearish} --- `down', `miss', `cut', 
 \textbf{Bullish} --- `beats', `strong', `upgraded', `buy'; \textbf{Neutral} --- `flat',
 `unchanged', `stable'. Per-class word clouds are included in the accompanying notebook.
 
+\subsection{EDA-to-Modelling Decisions}
+The exploratory analysis is not only descriptive; it directly determines the modelling choices.
+\begin{table}[H]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}
+                                >{\raggedright\arraybackslash}p{0.33\linewidth}
+                                >{\raggedright\arraybackslash}X@{}}
+    \toprule
+    \tH{Finding} & \tH{Evidence} & \tH{Modelling consequence} \\
+    \gmid
+    Severe class imbalance & Neutral 64.7\%, Bullish 20.1\%, Bearish 15.1\% &
+    Stratified folds, class-weighted losses and macro-F1 as the primary metric. \\
+    Short, information-dense tweets & Mean 12.2 words, maximum 32 words &
+    Transformer max length 96 covers the corpus with headroom and avoids unnecessary padding. \\
+    Financial tokens carry sentiment & Cashtags, analyst actions, earnings and target-price terms &
+    Raw text is preserved for the final transformer; aggressive cleaning is tested but not assumed. \\
+    URL/mention boilerplate is common & URLs appear in roughly half of the tweets &
+    Regex cleaning is evaluated for sparse baselines, while tweet-specialised tokenizers handle raw text. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{How EDA findings are translated into concrete modelling choices.}
+  \label{tab:eda_decisions}
+\end{table}
+
 \subsection{Corpus Split and Validation Protocol}
 To satisfy the corpus-split requirement without wasting labelled data, every experiment uses
 \textbf{5-fold stratified cross-validation} on the 9{,}543 labelled tweets
@@ -206,8 +232,10 @@ macro-F1, and averages the five test-set probability vectors to produce \texttt{
 
 % ── 3. Data Preprocessing ────────────────────────────────────────
 \section{Data Preprocessing}
-We implement six preprocessing techniques following the NLTK-based approach from course Lab~1, then
-quantify their effect through an ablation study.
+We implement six preprocessing techniques following the NLTK-based approach from course Lab~1 and
+the tweet-tokenisation practice from the extra TF--IDF lab. Crucially, preprocessing is treated as an
+\emph{empirical question}: every variant is measured under the same 5-fold protocol before deciding
+what enters the final pipeline.
 
 \subsection{Preprocessing Pipeline}
 \begin{itemize}
@@ -220,6 +248,11 @@ quantify their effect through an ablation study.
   \item \tH{T5 --- Snowball stemming.} More aggressive: `earnings' $\to$ `earn'.
   \item \tH{T6 --- TweetTokenizer.} \texttt{reduce\_len=True}, \texttt{strip\_handles=True}.
 \end{itemize}
+
+Example transformations are shown in the notebook: URLs and mentions become generic tokens, cashtags
+retain the ticker identity, negations survive stop-word removal, and lemmatisation/stemming reduce
+inflected forms. This demonstrates compliance with the preprocessing requirement while also exposing
+the main trade-off: cleaning removes noise, but may also remove finance-specific signal.
 
 \subsection{Ablation Study}
 Each configuration is evaluated with Logistic Regression ($C=1.0$) and TF--IDF (10{,}000 vocabulary)
@@ -253,7 +286,10 @@ under 5-fold stratified CV.
 \textbf{Key finding:} raw text achieves the highest macro-F1 (0.7183). This is consistent with prior
 financial NLP work (Go et al., 2009): ticker symbols (\$AAPL), analyst-firm names and domain
 vocabulary (`downgrade', `EPS beat', `guidance raise') carry strong discriminative signal that
-preprocessing destroys. All downstream experiments therefore use raw text.
+preprocessing destroys. Therefore, the project does \emph{not} skip preprocessing; it implements,
+documents and ablates it, then justifies the final raw-text choice with evidence. Sparse baselines
+still use the cleaned variants for comparison, while the submitted Twitter--RoBERTa-large relies on
+its native tweet tokenizer and receives raw financial text.
 
 % ── 4. Feature Engineering ───────────────────────────────────────
 \section{Feature Engineering}
