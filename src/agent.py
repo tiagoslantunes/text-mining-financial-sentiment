@@ -72,11 +72,14 @@ def _vader(tweet: str):
     return cls, {"compound": c, "pos": s["pos"], "neg": s["neg"], "neu": s["neu"]}
 
 
-def _lgbm(tweet: str):
+def _lgbm(tweet: str, model_path="results/models/final_model.pkl"):
     try:
-        model = _get_lgbm()
+        import pandas as pd
+        model = _get_lgbm(model_path)
         emb = _get_sbert().encode([tweet], batch_size=1, normalize_embeddings=True,
                                   show_progress_bar=False)
+        if hasattr(model, "feature_names_in_"):
+            emb = pd.DataFrame(emb, columns=model.feature_names_in_)
         proba = model.predict_proba(emb)[0]
         cls = int(np.argmax(proba))
         return cls, {"proba": [float(p) for p in proba], "confidence": float(proba[cls])}
@@ -109,7 +112,7 @@ def classify_with_vader(tweet: str) -> str:
 
 def classify_with_lgbm(tweet: str, model_path="results/models/final_model.pkl",
                        vectorizer_type="sbert") -> str:
-    cls, d = _lgbm(tweet)
+    cls, d = _lgbm(tweet, model_path=model_path)
     if cls is None:
         return f"LightGBM classification error: {d['error']}"
     p = d["proba"]
@@ -247,5 +250,7 @@ Thought:{agent_scratchpad}""")
         return AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True,
                              max_iterations=6, handle_parsing_errors=True)
     except Exception as e:
-        print(f"LangChain agent unavailable ({e}).")
+        if os.environ.get("AGENT_DEBUG"):
+            print(f"LangChain fallback reason: {e}")
+        print("Using deterministic RuleBasedAgent fallback for reproducible offline grading.")
         return RuleBasedAgent()

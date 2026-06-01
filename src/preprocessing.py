@@ -6,10 +6,41 @@ All techniques follow the professor's canonical implementation from Lab 1
 
 import re
 import unicodedata
+import os
 import nltk
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
+
+
+def _nltk_download_dir():
+    data_dirs = os.environ.get("NLTK_DATA")
+    if not data_dirs:
+        return None
+    return data_dirs.split(os.pathsep)[0]
+
+
+def _resource_exists(resource_paths: tuple[str, ...]) -> bool:
+    for resource_path in resource_paths:
+        try:
+            nltk.data.find(resource_path)
+            return True
+        except LookupError:
+            continue
+    return False
+
+
+def _ensure_nltk_resource(resource_paths: tuple[str, ...], package_name: str) -> None:
+    if _resource_exists(resource_paths):
+        return
+    nltk.download(package_name, quiet=True, download_dir=_nltk_download_dir())
+    if not _resource_exists(resource_paths):
+        paths = ", ".join(resource_paths)
+        raise LookupError(f"NLTK package '{package_name}' was downloaded but not found at {paths}")
+
+
+_ensure_nltk_resource(("corpora/stopwords", "corpora/stopwords.zip"), "stopwords")
+_ensure_nltk_resource(("corpora/wordnet", "corpora/wordnet.zip"), "wordnet")
 
 # Pre-instantiate (expensive objects, reuse across calls)
 STOP_WORDS = set(stopwords.words("english"))

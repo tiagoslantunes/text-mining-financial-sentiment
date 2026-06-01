@@ -47,7 +47,7 @@
       ]
     },
     {
-      "tag": "roberta-sentiment-latest (current submission)",
+      "tag": "roberta-sentiment-latest (previous single-model baseline)",
       "model_id": "cardiffnlp/twitter-roberta-base-sentiment-latest",
       "F1-macro": 0.8399177266142361,
       "elapsed_min": 0.0
@@ -101,5 +101,7 @@
   },
   "current_baseline": 0.8399177266142361,
   "beats_baseline": true,
-  "best_is_current": false
+  "best_is_current": true,
+  "submitted_tag": "robertalarge",
+  "best_is_submitted": true
 }

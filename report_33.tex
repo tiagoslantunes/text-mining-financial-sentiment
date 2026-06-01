@@ -195,6 +195,15 @@ discriminative terms per class are: \textbf{Bearish} --- `down', `miss', `cut', 
 \textbf{Bullish} --- `beats', `strong', `upgraded', `buy'; \textbf{Neutral} --- `flat',
 `unchanged', `stable'. Per-class word clouds are included in the accompanying notebook.
 
+\subsection{Corpus Split and Validation Protocol}
+To satisfy the corpus-split requirement without wasting labelled data, every experiment uses
+\textbf{5-fold stratified cross-validation} on the 9{,}543 labelled tweets
+(\texttt{StratifiedKFold}, \texttt{shuffle=True}, \texttt{random\_state=42}). Stratification keeps
+the Bearish/Bullish/Neutral proportions stable in each validation fold, which is essential under the
+4.28:1 imbalance. The final notebook keeps the same protocol: each fold trains on 80\% of the
+labelled corpus, validates on the remaining 20\%, stores out-of-fold predictions for honest
+macro-F1, and averages the five test-set probability vectors to produce \texttt{pred\_33.csv}.
+
 % ── 3. Data Preprocessing ────────────────────────────────────────
 \section{Data Preprocessing}
 We implement six preprocessing techniques following the NLTK-based approach from course Lab~1, then
@@ -209,7 +218,7 @@ quantify their effect through an ablation study.
   (\{not, no, never, neither, nor, none\}) --- critical for sentiment (Manning et al., 2008).
   \item \tH{T4 --- WordNet lemmatisation.} POS-aware: `beaten' $\to$ `beat', `falling' $\to$ `fall'.
   \item \tH{T5 --- Snowball stemming.} More aggressive: `earnings' $\to$ `earn'.
-  \item \tH{T6 --- TweetTokenizer.} \texttt{reduce\_len=True}, \texttt{strip\_handles=False}.
+  \item \tH{T6 --- TweetTokenizer.} \texttt{reduce\_len=True}, \texttt{strip\_handles=True}.
 \end{itemize}
 
 \subsection{Ablation Study}
@@ -252,9 +261,10 @@ Eleven feature representations are computed, covering the three families require
 bag-of-words, Word2Vec and Transformer Encoder.
 
 \subsection{Sparse Representations (BoW)}
-Four sparse sets on raw text: \textbf{BoW} (binary CountVectorizer, 50k);
-\textbf{TF--IDF 1g} (\texttt{max\_df=0.95}, \texttt{min\_df=2}); \textbf{TF--IDF 2g} (uni+bigram,
-50k); and \textbf{TF--IDF char} (char 3--5-gram, 40k).
+Four sparse sets on raw text: \textbf{BoW} (binary CountVectorizer, \texttt{max\_features=20k},
+\texttt{min\_df=2}); \textbf{TF--IDF 1g} (\texttt{max\_features=20k}, \texttt{max\_df=0.80},
+\texttt{min\_df=2}); \textbf{TF--IDF 2g} (uni+bigram, \texttt{max\_features=50k}); and
+\textbf{TF--IDF char} (char 3--5-gram, \texttt{max\_features=30k}).
 
 \subsection{Word Embeddings (Word2Vec / GloVe)}
 \textbf{Word2Vec Skip-gram} and \textbf{CBOW} (200d) trained on the corpus (Mikolov et al., 2013),
