@@ -48,13 +48,15 @@ class ReproducibilityTests(unittest.TestCase):
         test_rows = self._read_csv_rows("data/raw/test.csv")
         pred_rows = self._read_csv_rows("pred_33.csv")
         pred_final_rows = self._read_csv_rows("results/predictions/pred_final.csv")
-        pred_roberta_rows = self._read_csv_rows("results/predictions/pred_robertalarge.csv")
+        pred_submitted_rows = self._read_csv_rows(
+            "results/predictions/pred_twitter_roberta_large_topic_sentiment.csv"
+        )
 
         self.assertEqual(["id", "label"], list(pred_rows[0].keys()))
         self.assertEqual(len(test_rows), len(pred_rows))
         self.assertEqual([row["id"] for row in test_rows], [row["id"] for row in pred_rows])
         self.assertTrue({row["label"] for row in pred_rows}.issubset({"0", "1", "2"}))
-        self.assertEqual(pred_rows, pred_roberta_rows)
+        self.assertEqual(pred_rows, pred_submitted_rows)
         self.assertEqual(pred_rows, pred_final_rows)
 
     def test_lgbm_agent_respects_model_path_and_feature_names(self):

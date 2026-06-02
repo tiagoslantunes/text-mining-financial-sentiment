@@ -128,11 +128,12 @@ preprocessing techniques, eleven feature representations --- spanning sparse TF-
 GloVe--Twitter, FinBERT, SBERT and Twitter--RoBERTa embeddings --- and twelve model families,
 all under an identical 5-fold stratified cross-validation protocol. Frozen-embedding classifiers
 tuned with Optuna plateau around macro-F1 0.80. We then conduct a \textbf{transformer backbone
-search} (model selection via the Hugging Face Hub), end-to-end fine-tuning four encoders; the best,
-a Twitter-domain \textbf{RoBERTa-large} (TimeLMs; Loureiro et al., 2022), reaches an out-of-fold
-macro-F1 of \textbf{0.8859} --- a \textbf{+0.0838} gain over the 0.8021 baseline and our
-\textbf{submitted single-model solution}. Notably, this single model also surpasses a six-learner
-stacking ensemble (extra work, 0.8483), so the submission is simultaneously our best result overall.
+search} (model selection via the Hugging Face Hub), end-to-end fine-tuning six encoders; the best,
+a Twitter-domain \textbf{RoBERTa-large topic-sentiment} variant, reaches an out-of-fold macro-F1 of
+\textbf{0.8873} --- a \textbf{+0.0852} gain over the 0.8021 baseline and our \textbf{submitted
+single-model solution}. Notably, this single model also surpasses the previous RoBERTa-large-2022
+candidate (0.8859) and a six-learner stacking ensemble (extra work, 0.8483), so the submission is
+simultaneously our best result overall.
 We additionally show that a fine-tuned \textbf{GPT-2 decoder} classifies at macro-F1 0.7724 (whereas
 few-shot prompting collapses to the majority class), and that an offline \textbf{agentic workflow}
 adaptively routes tweets between VADER, LightGBM/SBERT and FinBERT with conversational explanations.
@@ -340,41 +341,43 @@ experiment makes the out-of-fold (OOF) scores directly comparable.
 \subsection{Transformer Encoder Fine-tuning + Backbone Search}
 Whereas Section~4.3 used the encoders only as \emph{frozen} embeddings, here the full encoder is
 fine-tuned end-to-end --- the single largest lever in this study. Using the Hugging Face Hub for
-\textbf{model selection}, we shortlist four candidate encoders and fine-tune each under the identical
+\textbf{model selection}, we shortlist six candidate encoders and fine-tune each under the identical
 5-fold protocol (4 epochs, learning rate $2\times10^{-5}$, batch 16--32, max length 96, AdamW with
 10\% linear warmup, gradient clipping 1.0, inverse-frequency class-weighted cross-entropy, bf16
 mixed precision on an NVIDIA RTX~5070). Table~\ref{tab:backbones} reports the comparison.
 
 \begin{table}[H]
   \centering
-  \small
-  \setlength{\tabcolsep}{7pt}
+  \footnotesize
+  \setlength{\tabcolsep}{5pt}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r@{}}
     \toprule
     \tH{Backbone (fine-tuned end-to-end)} & \tH{Params} & \tH{OOF F1} & \tH{Acc.} \\
     \gmid
-    twitter-roberta-base-sentiment-latest (Barbieri 2020)   & 125M & 0.8399 & 0.8691 \\
-    twitter-roberta-base-2022-154m (TimeLMs)                & 125M & 0.8550 & 0.8810 \\
-    \rowcolor{lightgray} \textbf{twitter-roberta-large-2022-154m (TimeLMs)} & 355M & \textbf{0.8859} & \textbf{0.9080} \\
+    \rowcolor{lightgray} \textbf{twitter-roberta-large-topic-sentiment-latest} & 355M & \textbf{0.8873} & \textbf{0.9090} \\
+    twitter-roberta-large-2022-154m (TimeLMs)               & 355M & 0.8859 & 0.9080 \\
     deberta-v3-base (He et al., 2021)$^\dagger$             & 184M & 0.8653 & 0.8900 \\
+    twitter-roberta-base-2022-154m (TimeLMs)                & 125M & 0.8550 & 0.8810 \\
+    StockTwits-RoBERTa-base                                 & 125M & 0.8430 & 0.8709 \\
+    twitter-roberta-base-sentiment-latest (Barbieri 2020)   & 125M & 0.8399 & 0.8691 \\
     \bottomrule
   \end{tabularx}
-  \caption{Transformer backbone search (same 5-fold protocol). The Twitter-domain RoBERTa-large
-  (shaded) is the \textbf{submitted single model}. $^\dagger$DeBERTa-v3 produced NaN losses under
+  \caption{Transformer backbone search (same 5-fold protocol). The shaded Twitter-domain
+  RoBERTa-large topic-sentiment model is the \textbf{submitted single model}. $^\dagger$DeBERTa-v3 produced NaN losses under
   bf16 (its disentangled attention is numerically unstable in reduced precision) and had to be
   trained in fp32; even so it trails RoBERTa-large (see Section~6.1).}
   \label{tab:backbones}
 \end{table}
 
-The winner, \textbf{Twitter--RoBERTa-large} (\nolinkurl{cardiffnlp/twitter-roberta-large-2022-154m}),
-is a 355M-parameter RoBERTa continually pre-trained on 154M tweets up to 2022 (TimeLMs; Loureiro et
-al., 2022). It attains an OOF macro-F1 of \textbf{0.8859} ($\pm$0.0066), accuracy 0.9080, precision
-0.8754 and recall 0.8975 --- a \textbf{+0.0838} gain over the 0.8021 frozen-embedding baseline and
-\textbf{+0.0460} over the previous fine-tuned base model. The recall gain confirms that a larger,
-domain-matched, end-to-end-adapted encoder markedly improves minority-class (Bearish/Bullish)
-detection. The final test prediction averages the five folds' softmax probabilities. \textbf{This is
-the submitted single-model solution} (\nolinkurl{pred_33.csv}, reproduced in
-\nolinkurl{tm_final_33.ipynb}); it is also our best result overall (Section~6.1).
+The winner, \textbf{Twitter--RoBERTa-large topic-sentiment}, is a 355M-parameter
+Twitter-domain RoBERTa-large already adapted to topic-based sentiment. We replace its original
+5-label sentiment head with a fresh 3-class Bearish/Bullish/Neutral head and fine-tune the complete
+network. It attains an OOF macro-F1 of \textbf{0.8873} ($\pm$0.0049), accuracy 0.9090, precision
+0.8796 and recall 0.8958 --- a \textbf{+0.0852} gain over the 0.8021 frozen-embedding baseline and
+\textbf{+0.0014} over the previous RoBERTa-large-2022 candidate. The final test prediction averages
+the five folds' softmax probabilities. \textbf{This is the submitted single-model solution}
+(\nolinkurl{pred_33.csv}, reproduced in \nolinkurl{tm_final_33.ipynb}); it is also our best result
+overall (Section~6.1).
 
 \subsection{Decoder Model --- Fine-tuned GPT-2 (Extra Work, +1.00 pt)}
 As decoder-based extra work we use a \emph{decoder} (causal) language model for classification.
@@ -399,25 +402,24 @@ TF--IDF bigrams, and a fine-tuned Twitter--RoBERTa) emit out-of-fold probabiliti
 an 18-dimensional meta-feature matrix on which a Logistic-Regression meta-learner is trained. Because
 every base learner shares the identical fold split, the meta-features are leakage-free. The stack
 reaches OOF macro-F1 \textbf{0.8483} --- strong, but now \emph{surpassed} by the single fine-tuned
-RoBERTa-large of Section~5.2 (0.8859). The submission is therefore the single model, which is both
+RoBERTa-large topic-sentiment model of Section~5.2 (0.8873). The submission is therefore the single model, which is both
 rule-compliant (Project Guidelines 5.2) and our best result.
 
 % ── 6. Results ───────────────────────────────────────────────────
 \section{Results and Evaluation}
 
 \subsection{Model Comparison}
-Figure~\ref{fig:results} ranks the top-20 configurations and Table~\ref{tab:results} lists the top
-models. The submitted single model --- fine-tuned Twitter--RoBERTa-large --- tops the ranking at
-macro-F1 \textbf{0.8859}, ahead of both the six-learner stack (0.8483, extra work) and every
-frozen-embedding model. DeBERTa-v3-base, although a strong encoder in principle, required full fp32
-to train at all (its disentangled attention NaN-ed under bf16/fp16); even stabilised (0.8653) it was
-only the second-best single model, trailing the larger Twitter--RoBERTa-large --- so a recent,
-\emph{domain-matched} and larger encoder is the decisive factor here.
+Figure~\ref{fig:results} ranks the top configurations and Table~\ref{tab:results} lists the top
+models. The submitted single model --- fine-tuned Twitter--RoBERTa-large topic-sentiment --- tops
+the ranking at macro-F1 \textbf{0.8873}, ahead of the previous RoBERTa-large-2022 candidate (0.8859),
+the six-learner stack (0.8483, extra work), and every frozen-embedding model. DeBERTa-v3-base,
+although a strong encoder in principle, required full fp32 to train at all (its disentangled
+attention NaN-ed under bf16/fp16); even stabilised (0.8653) it trailed both large Twitter models.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.72\linewidth]{report_results.png}
-  \caption{Top-20 models ranked by 5-fold CV macro-F1 (error bars = 1 std).}
+  \caption{Top configurations ranked by 5-fold CV macro-F1.}
   \label{fig:results}
 \end{figure}
 
@@ -429,13 +431,14 @@ only the second-best single model, trailing the larger Twitter--RoBERTa-large --
     \toprule
     \tH{Model (feature)} & \tH{F1$_{\text{mac}}$} & \tH{$\sigma$} & \tH{Acc.} & \tH{Prec.} & \tH{Rec.} \\
     \gmid
-    \rowcolor{lightgray} Twitter-RoBERTa-large \textbar{} \textbf{submitted} & \textbf{0.8859} & 0.0066 & 0.9080 & 0.8754 & 0.8975 \\
+    \rowcolor{lightgray} Twitter-RoBERTa-large topic-sent. \textbar{} \textbf{submitted} & \textbf{0.8873} & 0.0049 & 0.9090 & 0.8796 & 0.8958 \\
+    Twitter-RoBERTa-large-2022-154m                     & 0.8859 & 0.0066 & 0.9080 & 0.8754 & 0.8975 \\
     DeBERTa-v3-base (fp32)                              & 0.8653 & 0.0065 & 0.8900 & 0.8506 & 0.8822 \\
     Twitter-RoBERTa-base-2022-154m                      & 0.8550 & 0.0069 & 0.8810 & 0.8351 & 0.8800 \\
     Stacking-6 \textbar{} +fine-tuned \emph{(extra)}    & 0.8483 & 0.0073 & 0.8771 & 0.8271 & 0.8757 \\
+    StockTwits-RoBERTa-base                             & 0.8430 & 0.0117 & 0.8709 & 0.8303 & 0.8577 \\
     Soft-Average \textbar{} 6 learners \emph{(extra)}   & 0.8412 & ---    & 0.8800 & 0.8566 & 0.8276 \\
     Twitter-RoBERTa-base sentiment-latest               & 0.8399 & 0.0062 & 0.8691 & 0.8188 & 0.8671 \\
-    LightGBM Tuned \textbar{} RoBERTa                   & 0.8021 & 0.0063 & 0.8532 & 0.8192 & 0.7879 \\
     GPT-2 decoder fine-tuned \emph{(extra)}             & 0.7724 & 0.0159 & 0.8125 & 0.7475 & 0.8171 \\
     \bottomrule
   \end{tabularx}
@@ -447,22 +450,22 @@ only the second-best single model, trailing the larger Twitter--RoBERTa-large --
 
 \textbf{Key findings:} (1) dense transformer embeddings outperform sparse TF--IDF and static
 embeddings across all model families; (2) end-to-end fine-tuning breaks the $\sim$0.80
-frozen-embedding plateau; (3) within fine-tuning, a larger, more recent, domain-matched encoder
-(RoBERTa-large-2022) gives the biggest gain; (4) a single strong model can beat a heterogeneous
-stacking ensemble --- simpler and rule-compliant.
+frozen-embedding plateau; (3) within fine-tuning, a large Twitter sentiment encoder gives the
+biggest gain; (4) a single strong model can beat a heterogeneous stacking ensemble --- simpler and
+rule-compliant.
 
 \subsection{Error Analysis}
 Figure~\ref{fig:cm} shows the confusion matrix of the submitted model. Per class it reaches F1 of
 0.85 (Bearish), 0.88 (Bullish) and 0.93 (Neutral). The dominant residual errors are Neutral tweets
-misclassified as Bullish or Bearish, reflecting the ambiguity of non-directional discourse, and
-Bearish~$\leftrightarrow$~Neutral confusion (negative financial language is often hedged or formal,
-e.g.\ `guidance revised downward'). On the held-out test set the model predicts 375 Bearish, 516
-Bullish and 1{,}497 Neutral (of 2{,}388) --- close to the training prior.
+misclassified as Bullish (270) or Bearish (212), reflecting the ambiguity of non-directional
+financial discourse, followed by Bullish/Bearish tweets softened into Neutral. On the held-out test
+set the model predicts 361 Bearish, 512 Bullish and 1{,}515 Neutral (of 2{,}388) --- close to the
+training prior.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.96\linewidth]{confusion_matrix.pdf}
-  \caption{Confusion matrix of the submitted fine-tuned Twitter--RoBERTa-large (normalised left,
+  \caption{Confusion matrix of the submitted fine-tuned Twitter--RoBERTa-large topic-sentiment model (normalised left,
   absolute counts right), from 5-fold out-of-fold predictions.}
   \label{fig:cm}
 \end{figure}
@@ -498,9 +501,10 @@ reproducible for the oral defence.
 \section{Conclusion}
 This work delivers a complete NLP pipeline for financial tweet sentiment classification. Guided by a
 Hugging Face backbone search, our \textbf{submitted single-model solution} --- an end-to-end
-fine-tuned \textbf{Twitter--RoBERTa-large} --- achieves an out-of-fold macro-F1 of \textbf{0.8859},
-a \textbf{+0.0838} gain over the 0.8021 baseline, and is also our best result overall, surpassing a
-six-learner stacking ensemble (0.8483, extra work). Key contributions: (1) empirical evidence that
+fine-tuned \textbf{Twitter--RoBERTa-large topic-sentiment} model --- achieves an out-of-fold
+macro-F1 of \textbf{0.8873}, a \textbf{+0.0852} gain over the 0.8021 baseline, and is also our best
+result overall, surpassing a six-learner stacking ensemble (0.8483, extra work). Key contributions:
+(1) empirical evidence that
 raw text beats preprocessing for financial tweets; (2) systematic evaluation of 11 feature
 representations and 12 model families; (3) a transformer backbone search showing that a larger,
 recent, domain-matched encoder is the decisive lever (and that DeBERTa-v3 needs fp32 yet still
