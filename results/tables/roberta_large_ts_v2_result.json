@@ -1,0 +1,41 @@
+{
+  "tag": "roberta_large_ts_v2",
+  "model_id": "cardiffnlp/twitter-roberta-large-topic-sentiment-latest",
+  "F1-macro": 0.8878199392186445,
+  "F1-macro_std": 0.00331006753336385,
+  "F1-weighted": 0.9097873972940098,
+  "Accuracy": 0.9092528554961752,
+  "Precision-macro": 0.879130819452352,
+  "Recall-macro": 0.8972193810293089,
+  "per_fold_f1": [
+    0.8861761999277696,
+    0.885164673564036,
+    0.8852244346773999,
+    0.8887253129453773,
+    0.893941834384976
+  ],
+  "elapsed_min": 21.644752411047616,
+  "test_dist": [
+    379,
+    515,
+    1494
+  ],
+  "recipe": {
+    "epochs": 5,
+    "maxlen": 128,
+    "lr": 1e-05,
+    "weight_decay": 0.01,
+    "batch_size": 16,
+    "effective_batch_size": 16,
+    "grad_accum": 1,
+    "label_smoothing": 0.05,
+    "warmup_ratio": 0.06,
+    "llrd": 0.0,
+    "schedule": "cosine",
+    "amp_dtype": "fp16",
+    "eval_batch_size": 32,
+    "n_folds": 5,
+    "class_weighted_loss": true,
+    "best_checkpoint_per_fold": true
+  }
+}

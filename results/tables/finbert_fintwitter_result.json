@@ -1,0 +1,41 @@
+{
+  "tag": "finbert_fintwitter",
+  "model_id": "nickmuchi/finbert-tone-finetuned-fintwitter-classification",
+  "F1-macro": 0.898852860768382,
+  "F1-macro_std": 0.010293505972635878,
+  "F1-weighted": 0.9223719431993832,
+  "Accuracy": 0.9216179398511999,
+  "Precision-macro": 0.8880751685210413,
+  "Recall-macro": 0.9108273706333178,
+  "per_fold_f1": [
+    0.8940333873052168,
+    0.8903437968898026,
+    0.9186002543215365,
+    0.8992728874162786,
+    0.8922179395904825
+  ],
+  "elapsed_min": 9.216848039627076,
+  "test_dist": [
+    391,
+    486,
+    1511
+  ],
+  "recipe": {
+    "epochs": 5,
+    "maxlen": 128,
+    "lr": 1e-05,
+    "weight_decay": 0.01,
+    "batch_size": 16,
+    "effective_batch_size": 16,
+    "grad_accum": 1,
+    "label_smoothing": 0.05,
+    "warmup_ratio": 0.06,
+    "llrd": 0.0,
+    "schedule": "cosine",
+    "amp_dtype": "fp16",
+    "eval_batch_size": 32,
+    "n_folds": 5,
+    "class_weighted_loss": true,
+    "best_checkpoint_per_fold": true
+  }
+}
