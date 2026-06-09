@@ -1,0 +1,42 @@
+{
+  "tag": "deberta_base_finance_fixtext",
+  "model_id": "nickmuchi/deberta-v3-base-finetuned-finance-text-classification",
+  "F1-macro": 0.8670886029759798,
+  "F1-macro_std": 0.00725506863563966,
+  "F1-weighted": 0.8918932213585393,
+  "Accuracy": 0.890600440113172,
+  "Precision-macro": 0.8506926001681072,
+  "Recall-macro": 0.8863990858780637,
+  "per_fold_f1": [
+    0.8688752624278125,
+    0.8633665193161321,
+    0.8805185107372431,
+    0.8617361034006971,
+    0.8609957502477431
+  ],
+  "elapsed_min": 22.895738005638123,
+  "test_dist": [
+    399,
+    532,
+    1457
+  ],
+  "recipe": {
+    "epochs": 8,
+    "maxlen": 128,
+    "lr": 1e-05,
+    "weight_decay": 0.01,
+    "batch_size": 16,
+    "effective_batch_size": 32,
+    "grad_accum": 2,
+    "label_smoothing": 0.05,
+    "warmup_ratio": 0.1,
+    "llrd": 0.0,
+    "schedule": "cosine",
+    "amp_dtype": "fp16",
+    "eval_batch_size": 32,
+    "n_folds": 5,
+    "class_weighted_loss": true,
+    "best_checkpoint_per_fold": true,
+    "fix_text": true
+  }
+}
