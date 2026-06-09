@@ -20,6 +20,9 @@ import tempfile
 import time
 from pathlib import Path
 
+import re
+
+import ftfy
 import numpy as np
 import pandas as pd
 import torch
@@ -35,6 +38,18 @@ from transformers import (
 
 
 SEED = 42
+
+_TRUNC_RE = re.compile(r'[�…°]+\s*(https?://\S*)?$')
+_URL_RE    = re.compile(r'https?://\S+')
+_TRAIL_RE  = re.compile(r'[\s\-–:]+$')
+
+def fix_tweet(text: str) -> str:
+    """Fix mojibake (ftfy) and remove truncation artefacts + bare URLs."""
+    text = ftfy.fix_text(text)
+    text = _TRUNC_RE.sub('', text)
+    text = _URL_RE.sub('', text)
+    text = _TRAIL_RE.sub('', text).strip()
+    return text
 
 
 def seed_all(seed: int = SEED) -> None:
@@ -62,6 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--llrd", type=float, default=0.0, help="Layer-wise LR decay factor (0=disabled, 0.9=mild)")
     parser.add_argument("--schedule", choices=["linear", "cosine"], default="cosine")
     parser.add_argument("--amp-dtype", choices=["fp16", "bf16", "none"], default="fp16")
+    parser.add_argument("--fix-text", action="store_true", help="Apply ftfy mojibake fix + truncation cleanup before tokenization")
     parser.add_argument("--train-csv", default="data/raw/train.csv")
     parser.add_argument("--test-csv", default="data/raw/test.csv")
     parser.add_argument("--out-dir", default="results")
@@ -149,6 +165,10 @@ def main() -> None:
     test = pd.read_csv(args.test_csv)
     train_texts = train["text"].astype(str).tolist()
     test_texts = test["text"].astype(str).tolist()
+    if args.fix_text:
+        print("Applying ftfy + truncation fix to all texts...")
+        train_texts = [fix_tweet(t) for t in train_texts]
+        test_texts  = [fix_tweet(t) for t in test_texts]
     y = train["label"].to_numpy()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -339,6 +359,7 @@ def main() -> None:
             "n_folds": args.n_folds,
             "class_weighted_loss": True,
             "best_checkpoint_per_fold": True,
+            "fix_text": args.fix_text,
         },
     }
 
