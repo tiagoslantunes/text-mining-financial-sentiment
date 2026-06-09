@@ -1,0 +1,23 @@
+{
+  "tag": "ensemble_all6",
+  "models": [
+    "finbert_fintwitter_10ep_fixtext",
+    "finbert_fintwitter_10ep",
+    "finbert_fintwitter_7ep",
+    "finbert_fintwitter",
+    "roberta_large_ts_v2",
+    "debertav3_large_6ep"
+  ],
+  "F1-macro": 0.9141410404443326,
+  "F1-macro_std": 0.008000527968337362,
+  "F1-weighted": 0.9329635499464154,
+  "Accuracy": 0.9324111914492298,
+  "Precision-macro": 0.9034396365371141,
+  "Recall-macro": 0.9258756336408975,
+  "test_dist": [
+    386,
+    498,
+    1504
+  ],
+  "method": "soft_vote_equal_weights"
+}
