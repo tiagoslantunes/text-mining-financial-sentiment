@@ -1,24 +1,29 @@
 {
   "tag": "deberta_base_finance_fixtext",
   "model_id": "nickmuchi/deberta-v3-base-finetuned-finance-text-classification",
-  "F1-macro": 0.8670886029759798,
-  "F1-macro_std": 0.00725506863563966,
-  "F1-weighted": 0.8918932213585393,
-  "Accuracy": 0.890600440113172,
-  "Precision-macro": 0.8506926001681072,
-  "Recall-macro": 0.8863990858780637,
+  "F1-macro": 0.8714640473954155,
+  "F1-macro_std": 0.007156041674310253,
+  "F1-weighted": 0.8956033788845806,
+  "Accuracy": 0.894687205281358,
+  "Precision-macro": 0.8589915670696388,
+  "Recall-macro": 0.8854758524692504,
   "per_fold_f1": [
-    0.8688752624278125,
-    0.8633665193161321,
-    0.8805185107372431,
-    0.8617361034006971,
-    0.8609957502477431
+    0.8774534845122851,
+    0.8726610765572888,
+    0.8654776267401195,
+    0.8748752630523612,
+    0.8700071039194608,
+    0.881395135272793,
+    0.8704638242230102,
+    0.8693379275995111,
+    0.8785664577047566,
+    0.8550131359321836
   ],
-  "elapsed_min": 22.895738005638123,
+  "elapsed_min": 48.08247562646866,
   "test_dist": [
-    399,
-    532,
-    1457
+    386,
+    523,
+    1479
   ],
   "recipe": {
     "epochs": 8,
@@ -34,7 +39,7 @@
     "schedule": "cosine",
     "amp_dtype": "fp16",
     "eval_batch_size": 32,
-    "n_folds": 5,
+    "n_folds": 10,
     "class_weighted_loss": true,
     "best_checkpoint_per_fold": true,
     "fix_text": true

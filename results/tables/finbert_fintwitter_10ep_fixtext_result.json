@@ -1,24 +1,29 @@
 {
   "tag": "finbert_fintwitter_10ep_fixtext",
   "model_id": "nickmuchi/finbert-tone-finetuned-fintwitter-classification",
-  "F1-macro": 0.9075153613116056,
-  "F1-macro_std": 0.008243732719349632,
-  "F1-weighted": 0.9290802508816183,
-  "Accuracy": 0.92842921513151,
-  "Precision-macro": 0.8970282627108025,
-  "Recall-macro": 0.9190798932021772,
+  "F1-macro": 0.9082470696635333,
+  "F1-macro_std": 0.009791253713068798,
+  "F1-weighted": 0.9297374809482795,
+  "Accuracy": 0.9292675259352405,
+  "Precision-macro": 0.9007657531530259,
+  "Recall-macro": 0.9163105976132159,
   "per_fold_f1": [
-    0.8997628032616248,
-    0.9018243418776825,
-    0.9231652502286178,
-    0.9069046127222818,
-    0.9060941539937017
+    0.9046694859062105,
+    0.9072339616913343,
+    0.89368545913031,
+    0.9036805279725769,
+    0.918687358368385,
+    0.9307168255454495,
+    0.8989108640921981,
+    0.9060593779742717,
+    0.910718164458766,
+    0.9081035384367432
   ],
-  "elapsed_min": 17.82250297864278,
+  "elapsed_min": 39.65860238869985,
   "test_dist": [
-    393,
-    490,
-    1505
+    380,
+    482,
+    1526
   ],
   "recipe": {
     "epochs": 10,
@@ -34,7 +39,7 @@
     "schedule": "cosine",
     "amp_dtype": "fp16",
     "eval_batch_size": 32,
-    "n_folds": 5,
+    "n_folds": 10,
     "class_weighted_loss": true,
     "best_checkpoint_per_fold": true,
     "fix_text": true
