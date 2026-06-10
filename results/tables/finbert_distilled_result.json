@@ -1,0 +1,50 @@
+{
+  "tag": "finbert_distilled",
+  "model_id": "nickmuchi/finbert-tone-finetuned-fintwitter-classification",
+  "F1-macro": 0.9133710174822625,
+  "F1-macro_std": 0.010014531895908231,
+  "F1-weighted": 0.93327258249896,
+  "Accuracy": 0.9326207691501625,
+  "Precision-macro": 0.90173028212114,
+  "Recall-macro": 0.9262838793896296,
+  "per_fold_f1": [
+    0.9101477179872309,
+    0.9078455481777424,
+    0.8999225830370138,
+    0.9093371378231888,
+    0.9258682995382453,
+    0.9369224286433134,
+    0.9155210390767206,
+    0.9103993888590192,
+    0.911621456967982,
+    0.9072379714702142
+  ],
+  "teacher_oof_f1": 0.920147391757116,
+  "teacher_models": [
+    "finbert_fintwitter_10ep_fixtext",
+    "finbert_fintwitter_7ep",
+    "roberta_large_ts_v2",
+    "debertav3_large_6ep",
+    "finbert_fintwitter_10ep",
+    "finbert_fintwitter",
+    "debertav3_large_6ep_fixtext",
+    "deberta_base_finance_fixtext"
+  ],
+  "elapsed_min": 37.76260500748952,
+  "test_dist": [
+    393,
+    495,
+    1500
+  ],
+  "recipe": {
+    "epochs": 10,
+    "maxlen": 128,
+    "lr": 5e-06,
+    "batch_size": 16,
+    "n_folds": 10,
+    "alpha": 0.5,
+    "temperature": 2.0,
+    "fix_text": true,
+    "loss": "(1-a)*weighted_CE + a*T^2*KL(student||teacher)"
+  }
+}

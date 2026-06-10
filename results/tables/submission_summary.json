@@ -1,0 +1,18 @@
+{
+  "submitted_tag": "finbert_distilled",
+  "submitted_oof_f1": 0.9133710174822625,
+  "submitted_acc": 0.9326207691501625,
+  "submitted_prec": 0.90173028212114,
+  "submitted_rec": 0.9262838793896296,
+  "teacher_f1": 0.920147391757116,
+  "per_class_f1": {
+    "Bearish": 0.8709569856618873,
+    "Bullish": 0.9159449821701477,
+    "Neutral": 0.9532110846147521
+  },
+  "test_dist": [
+    393,
+    495,
+    1500
+  ]
+}

@@ -19,5 +19,10 @@
     "smote_f1": 0.7993,
     "delta": 0.0063,
     "conclusion": "SMOTE melhor"
+  },
+  "phase_final_submission": {
+    "done": true,
+    "timestamp": 1781134918.975046,
+    "oof_f1": 0.9133710174822625
   }
 }
