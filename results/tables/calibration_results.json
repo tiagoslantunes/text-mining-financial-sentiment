@@ -1,0 +1,20 @@
+{
+  "finbert_fintwitter_10ep_fixtext": {
+    "base_f1": 0.9082,
+    "best_T": 1.0,
+    "best_f1": 0.9082,
+    "gain": 0.0
+  },
+  "finbert_fintwitter_7ep": {
+    "base_f1": 0.9049,
+    "best_T": 1.0,
+    "best_f1": 0.9049,
+    "gain": 0.0
+  },
+  "debertav3_large_6ep": {
+    "base_f1": 0.8882,
+    "best_T": 1.0,
+    "best_f1": 0.8882,
+    "gain": 0.0
+  }
+}

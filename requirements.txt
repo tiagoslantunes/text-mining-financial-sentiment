@@ -21,6 +21,7 @@ tokenizers>=0.13.0
 # Finance-specific NLP
 vaderSentiment>=3.3.2
 textstat>=0.7.0
+ftfy>=6.1.0
 
 # ML Avancado
 xgboost>=2.0.0

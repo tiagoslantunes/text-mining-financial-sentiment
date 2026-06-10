@@ -1,0 +1,5 @@
+Model,Preprocessing,OOF F1-macro,Accuracy,Delta F1
+FinBERT-fintwitter 10ep,raw text,0.9056,0.9275,
+FinBERT-fintwitter 10ep,fix_text,0.9082,0.9293,0.0026
+DeBERTa-v3-large 6ep,raw text,0.8882,0.91,
+DeBERTa-v3-large 6ep,fix_text,0.8889,0.9107,0.0007

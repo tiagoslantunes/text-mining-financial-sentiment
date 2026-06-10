@@ -1,0 +1,9 @@
+{
+  "neutral_total": 6178,
+  "vader_positive": 1992,
+  "vader_positive_pct": 32.2,
+  "vader_negative": 1137,
+  "vader_negative_pct": 18.4,
+  "vader_neutral": 3049,
+  "vader_neutral_pct": 49.4
+}
