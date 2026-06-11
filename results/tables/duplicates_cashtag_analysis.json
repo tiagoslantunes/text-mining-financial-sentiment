@@ -10,9 +10,10 @@
   },
   "cashtag_ablation_lr_tfidf_5fold": {
     "tweets_with_cashtags_pct": 15.0,
-    "fix_text_baseline": 0.7186,
-    "cashtags_to_generic_TICKER": 0.7207,
-    "cashtags_removed": 0.7194,
-    "decision": "ticker PRESENCE is mildly informative, ticker IDENTITY is not (for sparse models). Mapping tickers to company names would re-introduce identity as rare tokens (no gain expected) and, for the transformer, shift inputs away from FinBERT-fintwitter's pre-training distribution (which contains native cashtags) -> rejected; submitted pipeline keeps native cashtags"
+    "fix_text_baseline": 0.7149,
+    "cashtags_to_generic_TICKER": 0.7161,
+    "cashtags_removed": 0.715,
+    "decision": "all three variants tie within one std -> ticker identity carries no sentiment signal for sparse models. Mapping tickers to company names rejected: no expected gain, and for the transformer it would shift inputs away from FinBERT-fintwitter pre-training distribution (native cashtags)",
+    "protocol": "vectorizer fitted inside each CV fold (leak-free)"
   }
 }
