@@ -99,8 +99,8 @@
 \newcommand{\ttt}[1]{\texttt{\hyphenchar\font=`\-\relax #1}}
 
 % ── Submitted (distilled) model metrics — single source of truth ──
-\newcommand{\distf}{0.9134}    % OOF macro-F1 of the distilled student
-\newcommand{\distacc}{0.9326}  % OOF accuracy of the distilled student
+\newcommand{\distf}{0.9139}    % OOF macro-F1 of the distilled student (12 epochs)
+\newcommand{\distacc}{0.9334}  % OOF accuracy of the distilled student
 
 \begin{document}
 
@@ -453,14 +453,17 @@ rule, we \textbf{distil} it (Hinton et al., 2015): the eight-model ensemble beco
 \]
 where the teacher targets $p_t$ are the ensemble's \emph{out-of-fold} probabilities --- each
 training sample's soft target comes from folds that never saw that sample, so the distillation
-itself is leakage-free. Training otherwise mirrors the 10-fold recipe of Section~5.2. A grid search
+itself is leakage-free. Training otherwise mirrors the 10-fold recipe of Section~5.2, extended to
+12 epochs: because soft targets regularise, the student benefits from longer training (+0.18pp on
+a 3-fold proxy, confirmed on the full protocol). A grid search
 over the distillation hyperparameters ($\alpha \in \{0.5, 0.7, 0.9, 1.0\}$, $T \in \{2, 3\}$,
-3-fold proxy) confirmed $\alpha{=}0.5$, $T{=}2$ as optimal; we also evaluated post-hoc per-class
-probability scaling and \emph{rejected} it, as its held-out gain was within noise --- consistent
+3-fold proxy) confirmed $\alpha{=}0.5$, $T{=}2$ as optimal; R-Drop consistency regularisation and
+post-hoc per-class probability scaling were also evaluated and \emph{rejected}, as their held-out
+gains were within noise --- consistent
 with the calibration analysis of Section~6.3. The distilled
-student reaches OOF macro-F1 \textbf{\distf} (accuracy \distacc) --- recovering 44\% of the
+student reaches OOF macro-F1 \textbf{\distf} (accuracy \distacc) --- recovering 48\% of the
 ensemble's gain in a single 110M-parameter model, itself a statistically significant improvement
-over the best conventionally-trained encoder (paired bootstrap 95\% CI: $[+0.0016, +0.0087]$).
+over the best conventionally-trained encoder (paired bootstrap 95\% CI: $[+0.0023, +0.0094]$).
 This is the \textbf{submitted solution} (\nolinkurl{pred_33.csv}, produced by the single pipeline
 in \nolinkurl{tm_final_33.ipynb}).
 
@@ -520,7 +523,7 @@ last point.
     \tH{Model} & \tH{F1$_{\text{mac}}$} & \tH{$\sigma$} & \tH{Acc.} & \tH{Prec.} & \tH{Rec.} \\
     \gmid
     Ensemble, 8 encoders, optimised weights \emph{(extra)} & 0.9201 & --- & 0.9357 & 0.9097 & 0.9315 \\
-    \rowcolor{lightgray} Distilled FinBERT student \textbar{} \textbf{submitted} & \textbf{\distf} & 0.0100 & \distacc & 0.9017 & 0.9263 \\
+    \rowcolor{lightgray} Distilled FinBERT student \textbar{} \textbf{submitted} & \textbf{\distf} & 0.0093 & \distacc & 0.9032 & 0.9258 \\
     FinBERT-fintwitter 10ep + fix\_text                 & 0.9082 & 0.0098 & 0.9293 & 0.9008 & 0.9163 \\
     FinBERT-fintwitter 7ep + LLRD                       & 0.9080 & 0.0099 & 0.9285 & 0.8967 & 0.9206 \\
     Twitter-RoBERTa-large topic-sent.\ (prev.\ subm.)   & 0.8943 & 0.0100 & 0.9141 & 0.8857 & 0.9036 \\
@@ -546,12 +549,12 @@ a 110M FinBERT beats a 435M DeBERTa-v3-large by $\sim$2pp; (4) text repair (fix\
 
 \subsection{Error Analysis}
 Figure~\ref{fig:cm} shows the confusion matrix of the submitted model. Per class it reaches F1 of
-\textbf{0.871} (Bearish), \textbf{0.916} (Bullish) and \textbf{0.953} (Neutral). Errors concentrate
+\textbf{0.871} (Bearish), \textbf{0.917} (Bullish) and \textbf{0.954} (Neutral). Errors concentrate
 exactly where the EDA predicted (Section~2.4): the Neutral/directional boundary. Neutral tweets
 drift into Bullish/Bearish when they report factual but direction-laden news (``price target
 raised''), and directional tweets get softened into Neutral when the polarity is implicit. Bearish
 remains the hardest class --- it is both the smallest (15.1\%) and the most mojibake-affected after
-Neutral. On the held-out test set the model predicts 393 Bearish, 495 Bullish and 1{,}500 Neutral
+Neutral. On the held-out test set the model predicts 390 Bearish, 492 Bullish and 1{,}506 Neutral
 (of 2{,}388) --- close to the training prior. Three qualitative failure modes remain: irony/sarcasm,
 mixed-signal tweets (`beats EPS but misses revenue'), and truncated tweets whose decisive token was
 cut off --- the ceiling for text-only models on this corpus.
@@ -571,7 +574,7 @@ complement it with \emph{paired bootstrap} over the 9{,}543 OOF predictions (1{,
 which compares models on identical samples:
 \begin{itemize}
   \item ensemble vs.\ best individual encoder: $\Delta$F1 95\% CI $=[+0.0066, +0.0172]$ --- significant;
-  \item distilled student vs.\ best plain encoder: $[+0.0016, +0.0087]$ --- significant;
+  \item distilled student vs.\ best plain encoder: $[+0.0023, +0.0094]$ --- significant;
   \item best vs.\ second-best individual encoder: $[-0.0010, +0.0073]$ --- \emph{not} significant,
   confirming that single-encoder differences are within noise and the ensemble/distillation gains
   are the real levers.
@@ -610,7 +613,7 @@ reproducible for the oral defence.
 This work delivers a complete NLP pipeline for financial tweet sentiment classification. Our
 \textbf{submitted single-model solution} --- one FinBERT encoder trained by \textbf{knowledge
 distillation} from an eight-encoder ensemble teacher --- achieves an out-of-fold macro-F1 of
-\textbf{\distf} (accuracy \distacc), a \textbf{+0.111} gain over the 0.8021 classical baseline,
+\textbf{\distf} (accuracy \distacc), a \textbf{+0.112} gain over the 0.8021 classical baseline,
 while remaining a single 110M-parameter classifier. Key contributions: (1) a text-quality audit
 showing the corpus is corrupted at source, and a repair step (\texttt{ftfy} fix\_text) worth
 +0.26pp at transformer level --- whereas \emph{destructive} preprocessing consistently hurts;

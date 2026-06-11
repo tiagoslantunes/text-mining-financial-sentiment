@@ -6,7 +6,9 @@
     "a=0.9,T=2": 0.9045,
     "a=0.7,T=3": 0.9047,
     "a=0.5,T=3": 0.9055,
-    "a=1.0,T=2": 0.9034
+    "a=1.0,T=2": 0.9034,
+    "epochs=12 (a=0.5,T=2)": 0.9078,
+    "epochs=12 + R-Drop 1.0": 0.9062
   },
   "class_prior_tuning": {
     "method": "per-class probability multipliers, two-way cross-fold validation",
@@ -16,5 +18,5 @@
     ],
     "verdict": "rejected - gain within noise (model already calibrated)"
   },
-  "verdict": "defaults a=0.5, T=2 are locally optimal; no config exceeded the +0.15pp threshold"
+  "verdict": "a=0.5, T=2 optimal for alpha/T; extending the student to 12 epochs improves the proxy by +0.18pp (promoted to full 10-fold run); R-Drop on top rejected (-0.16pp vs 12ep alone)"
 }

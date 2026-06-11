@@ -1,18 +1,18 @@
 {
   "submitted_tag": "finbert_distilled",
-  "submitted_oof_f1": 0.9133710174822625,
-  "submitted_acc": 0.9326207691501625,
-  "submitted_prec": 0.90173028212114,
-  "submitted_rec": 0.9262838793896296,
+  "submitted_oof_f1": 0.9139378963455097,
+  "submitted_acc": 0.9333542911034266,
+  "submitted_prec": 0.9031850438698635,
+  "submitted_rec": 0.925771790931007,
   "teacher_f1": 0.920147391757116,
   "per_class_f1": {
-    "Bearish": 0.8709569856618873,
-    "Bullish": 0.9159449821701477,
-    "Neutral": 0.9532110846147521
+    "Bearish": 0.8712805081912404,
+    "Bullish": 0.9165177431707939,
+    "Neutral": 0.954015437674495
   },
   "test_dist": [
-    393,
-    495,
-    1500
+    390,
+    492,
+    1506
   ]
 }
