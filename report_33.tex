@@ -212,7 +212,17 @@ tweets contain UTF-8 mojibake (byte sequences decoded with the wrong codec, e.g.
 sentiment value. In total, 50.1\% of tweets are altered by our repair step. Corruption is not
 uniform across classes (Neutral 8.7\%, Bearish 5.5\%, Bullish 2.9\%), so leaving it unfixed injects
 class-correlated noise. This finding motivates the \texttt{fix\_text} preprocessing technique
-(Section~3.1) based on the \texttt{ftfy} library (Speer, 2019).
+(Section~3.1) based on the \texttt{ftfy} library (Speer, 2019). A complementary duplicate audit
+finds \emph{zero} exact duplicates in the training set; after normalisation, 2.1\% of tweets are
+near-duplicates (URL/encoding variants of the same post), of which three groups carry
+\emph{conflicting labels} --- direct evidence of annotation noise --- and 42 test tweets have a
+near-identical training counterpart (a property of the provided split). No rows are dropped.
+Finally, a cashtag ablation (15.0\% of tweets contain \$AAPL-style tags) shows that ticker
+\emph{presence} is mildly informative but ticker \emph{identity} is not: collapsing cashtags to a
+generic token changes sparse-model F1 by only +0.2pp. Mapping tickers to company names was
+therefore rejected --- it would re-introduce identity as rare tokens and, for the transformer,
+shift inputs away from the pre-training distribution of FinBERT-fintwitter, which contains native
+cashtags.
 
 \subsection{Lexicon Limits: VADER by Class}
 Scoring every tweet with VADER (Hutto \& Gilbert, 2014) exposes why general-purpose lexicons fail
