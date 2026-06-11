@@ -222,7 +222,10 @@ Finally, a cashtag ablation (15.0\% of tweets contain \$AAPL-style tags) shows t
 generic token changes sparse-model F1 by only +0.2pp. Mapping tickers to company names was
 therefore rejected --- it would re-introduce identity as rare tokens and, for the transformer,
 shift inputs away from the pre-training distribution of FinBERT-fintwitter, which contains native
-cashtags.
+cashtags. Finally, \emph{adversarial validation} --- a classifier trained to distinguish training
+from test tweets --- yields AUC 0.486 ($\approx$0.5), and all surface statistics match across the
+two sets: the test set is statistically indistinguishable from training, so our out-of-fold
+estimates are a reliable proxy for test performance.
 
 \subsection{Lexicon Limits: VADER by Class}
 Scoring every tweet with VADER (Hutto \& Gilbert, 2014) exposes why general-purpose lexicons fail
@@ -247,7 +250,7 @@ The exploratory analysis is not only descriptive; it directly determines the mod
     Severe class imbalance & Neutral 64.7\%, Bullish 20.1\%, Bearish 15.1\% &
     Stratified folds, class-weighted losses and macro-F1 as the primary metric. \\
     Short, information-dense tweets & Mean 12.2 words, maximum 32 words &
-    Transformer max length 96 covers the corpus with headroom and avoids unnecessary padding. \\
+    Transformer max length 128 covers the corpus (max 33 words) with subword headroom. \\
     Financial tokens carry sentiment & Cashtags, analyst actions, earnings and target-price terms &
     Raw text is preserved for the final transformer; aggressive cleaning is tested but not assumed. \\
     URL/mention boilerplate is common & URLs appear in 46.8\% of the tweets &
@@ -565,9 +568,13 @@ drift into Bullish/Bearish when they report factual but direction-laden news (``
 raised''), and directional tweets get softened into Neutral when the polarity is implicit. Bearish
 remains the hardest class --- it is both the smallest (15.1\%) and the most mojibake-affected after
 Neutral. On the held-out test set the model predicts 390 Bearish, 492 Bullish and 1{,}506 Neutral
-(of 2{,}388) --- close to the training prior. Three qualitative failure modes remain: irony/sarcasm,
-mixed-signal tweets (`beats EPS but misses revenue'), and truncated tweets whose decisive token was
-cut off --- the ceiling for text-only models on this corpus.
+(of 2{,}388) --- close to the training prior. Part of the residual error is the \emph{labels}, not
+the model: the eight-encoder ensemble contradicts the gold label with $\geq$95\% confidence on
+0.48\% of training tweets (e.g.\ ``Baird returns to Wingstop \emph{bull camp}'' is labelled
+Neutral), a lower bound on annotation noise that no classifier can overcome. Three qualitative
+failure modes remain: irony/sarcasm, mixed-signal tweets (`beats EPS but misses revenue'), and
+truncated tweets whose decisive token was cut off --- the ceiling for text-only models on this
+corpus.
 
 \begin{figure}[H]
   \centering

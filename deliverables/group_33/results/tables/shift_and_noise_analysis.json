@@ -1,0 +1,27 @@
+{
+  "shift": {
+    "train": {
+      "mean_words": 12.18,
+      "max_words": 32,
+      "pct_cashtag": 15.0,
+      "pct_url": 46.8,
+      "pct_mojibake": 7.0
+    },
+    "test": {
+      "mean_words": 12.32,
+      "max_words": 33,
+      "pct_cashtag": 15.4,
+      "pct_url": 47.8,
+      "pct_mojibake": 7.0
+    },
+    "adversarial_auc": 0.486,
+    "conclusion": "test set statistically indistinguishable from train -> OOF estimates are a reliable proxy"
+  },
+  "label_noise": {
+    "confident_disagreement_at_0.9": 77,
+    "confident_disagreement_at_0.95": 46,
+    "confident_disagreement_at_0.99": 1
+  },
+  "label_noise_pct_at_0.95": 0.48,
+  "conclusion": "estimated lower bound on annotation noise; bounds the achievable macro-F1 and explains the Neutral/directional confusion structure"
+}
