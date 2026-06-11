@@ -1,0 +1,20 @@
+{
+  "method": "3-fold proxy (folds 1-3 of the 10-fold protocol), mean best val F1-macro",
+  "baseline_a05_t2": 0.906,
+  "results": {
+    "a=0.7,T=2": 0.9062,
+    "a=0.9,T=2": 0.9045,
+    "a=0.7,T=3": 0.9047,
+    "a=0.5,T=3": 0.9055,
+    "a=1.0,T=2": 0.9034
+  },
+  "class_prior_tuning": {
+    "method": "per-class probability multipliers, two-way cross-fold validation",
+    "held_out_gains": [
+      0.0003,
+      -0.0007
+    ],
+    "verdict": "rejected - gain within noise (model already calibrated)"
+  },
+  "verdict": "defaults a=0.5, T=2 are locally optimal; no config exceeded the +0.15pp threshold"
+}

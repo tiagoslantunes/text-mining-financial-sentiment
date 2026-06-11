@@ -452,7 +452,11 @@ rule, we \textbf{distil} it (Hinton et al., 2015): the eight-model ensemble beco
 \]
 where the teacher targets $p_t$ are the ensemble's \emph{out-of-fold} probabilities --- each
 training sample's soft target comes from folds that never saw that sample, so the distillation
-itself is leakage-free. Training otherwise mirrors the 10-fold recipe of Section~5.2. The distilled
+itself is leakage-free. Training otherwise mirrors the 10-fold recipe of Section~5.2. A grid search
+over the distillation hyperparameters ($\alpha \in \{0.5, 0.7, 0.9, 1.0\}$, $T \in \{2, 3\}$,
+3-fold proxy) confirmed $\alpha{=}0.5$, $T{=}2$ as optimal; we also evaluated post-hoc per-class
+probability scaling and \emph{rejected} it, as its held-out gain was within noise --- consistent
+with the calibration analysis of Section~6.3. The distilled
 student reaches OOF macro-F1 \textbf{\distf} (accuracy \distacc) --- recovering 44\% of the
 ensemble's gain in a single 110M-parameter model, itself a statistically significant improvement
 over the best conventionally-trained encoder (paired bootstrap 95\% CI: $[+0.0016, +0.0087]$).
