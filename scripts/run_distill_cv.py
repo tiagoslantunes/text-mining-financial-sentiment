@@ -75,6 +75,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n-folds", type=int, default=10)
     p.add_argument("--alpha", type=float, default=0.5, help="weight of the KD term")
     p.add_argument("--temperature", type=float, default=2.0)
+    p.add_argument("--max-folds", type=int, default=0,
+                   help="if >0, train only the first k folds (fast hyperparameter proxy)")
     p.add_argument("--warmup-ratio", type=float, default=0.06)
     p.add_argument("--weights-json", default="results/tables/ensemble_optimal_result.json")
     p.add_argument("--train-csv", default="data/raw/train.csv")
@@ -237,6 +239,11 @@ def main() -> None:
         gc.collect()
         if device == "cuda":
             torch.cuda.empty_cache()
+
+        if args.max_folds and fold >= args.max_folds:
+            print(f"PROXY RESULT tag={args.tag} mean_fold_f1={np.mean(fold_scores):.6f} "
+                  f"folds={[round(s,4) for s in fold_scores]}", flush=True)
+            return
 
     test_proba = test_sum / args.n_folds
     oof_pred = oof.argmax(1)
