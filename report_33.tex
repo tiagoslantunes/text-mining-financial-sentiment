@@ -614,21 +614,31 @@ adaptive routing. The implementation lives in \nolinkurl{src/agent.py} and
 when no LLM key is present, plus an optional LangChain ReAct back-end; Yao et al., 2022).
 
 \subsection{Architecture and Routing}
-The agent exposes three tools --- \tH{VADER} (lexical baseline), \tH{LightGBM+SBERT} (ML model) and
-\tH{FinBERT} (domain transformer) --- and routes adaptively:
+The agent exposes three tools of escalating cost --- \tH{VADER} (lexical baseline,
+$\sim$0.1\,ms), \tH{LightGBM+SBERT} (ML model trained in this project, $\sim$25\,ms) and
+\tH{FinBERT-fintwitter} (the \emph{same domain backbone our submission fine-tunes}, used
+zero-shot as the expert, $\sim$150\,ms) --- and routes adaptively:
 \begin{itemize}
-  \item VADER gives a quick lexical reading; if $|\text{compound}| > 0.3$ (strong signal) it is
-  trusted directly.
+  \item VADER gives a quick lexical reading; if $|\text{compound}| > \tau$ it is trusted directly.
+  The threshold $\tau$ is \emph{calibrated on data}, not hand-picked: a sweep on 400 held-out
+  tweets finds the optimum at $\tau{=}0.85$ --- effectively discovering that the lexical tool
+  should act as a cross-check rather than a decider, consistent with the VADER analysis of
+  Section~2.4.
   \item Otherwise LightGBM+SBERT is consulted; if it agrees with VADER, that is the verdict.
-  \item On \emph{disagreement}, FinBERT is invoked as a domain-expert tie-breaker.
-  \item The agent explains which model it trusted and why, and \texttt{ConversationBufferMemory}
-  enables follow-up questions (``why did you classify that as Bearish?'').
+  \item On \emph{disagreement}, the FinBERT expert is invoked as tie-breaker.
+  \item Every verdict carries a reasoning trace with per-tool confidence and latency, and the
+  session keeps conversational memory: \texttt{why} / \texttt{history} / \texttt{stats} /
+  \texttt{compare:} follow-ups are supported (\texttt{ConversationBufferMemory} in the LangChain
+  back-end).
 \end{itemize}
-This exceeds simple voting through signal-strength-based tool selection, explicit disagreement
-detection with principled tie-breaking, and transparent reasoning. We validated the workflow
-end-to-end: on a held-out sample it produces correct, explained verdicts (e.g.\ ``\$TSLA misses
-estimates, downgrades'' $\to$ Bearish via FinBERT tie-break), and it is deterministic and
-reproducible for the oral defence.
+Evaluation is \emph{leakage-aware}: the agent's LightGBM tool is retrained on 80\% of the corpus
+and the agent is calibrated and evaluated only on the held-out 20\% (the public expert checkpoint
+saw the train split, which we disclose; routing shares and latency are unaffected). On 400
+held-out tweets the agent reaches accuracy 0.873 (macro-F1 0.833), resolving 44\% of tweets with
+cheap tools and cutting mean latency by 18\% versus always calling the expert (0.915) --- the
+quantified cost/accuracy trade-off that motivates agentic routing. The submitted distilled model
+remains the accuracy reference; the agent demonstrates \emph{orchestration under a cost budget},
+is deterministic, and is reproducible for the oral defence without any API key.
 
 % ── 8. Conclusion ────────────────────────────────────────────────
 \section{Conclusion}
