@@ -610,8 +610,13 @@ so no post-hoc calibration is applied to the submission.
 \section{Extra Challenge 2 --- Agentic Workflow (+1.50 pts)}
 We implement a conversational agent that orchestrates three classifiers with \emph{non-trivial},
 adaptive routing. The implementation lives in \nolinkurl{src/agent.py} and
-\nolinkurl{notebooks/08_Agentic_Workflow.ipynb}, and runs fully offline (a deterministic orchestrator
-when no LLM key is present, plus an optional LangChain ReAct back-end; Yao et al., 2022).
+\nolinkurl{notebooks/08_Agentic_Workflow.ipynb}. Following the course guideline on model choice,
+the workflow uses \emph{open-source models exclusively} and requires no API key: the
+conversational layer is a deterministic offline orchestrator, and the three tools are additionally
+exposed as LangChain \texttt{Tool} objects as an integration point for locally-served open-source
+LLMs in the ReAct style (Yao et al., 2022). The notebook includes both a scripted conversation
+(reproducible under Restart \& Run All) and an optional live-chat cell where the grader can type
+free-form phrases to the agent.
 
 \subsection{Architecture and Routing}
 The agent exposes three tools of escalating cost --- \tH{VADER} (lexical baseline,
@@ -627,9 +632,8 @@ zero-shot as the expert, $\sim$150\,ms) --- and routes adaptively:
   \item Otherwise LightGBM+SBERT is consulted; if it agrees with VADER, that is the verdict.
   \item On \emph{disagreement}, the FinBERT expert is invoked as tie-breaker.
   \item Every verdict carries a reasoning trace with per-tool confidence and latency, and the
-  session keeps conversational memory: \texttt{why} / \texttt{history} / \texttt{stats} /
-  \texttt{compare:} follow-ups are supported (\texttt{ConversationBufferMemory} in the LangChain
-  back-end).
+  session keeps conversational memory: free-form phrases are classified and \texttt{why} /
+  \texttt{history} / \texttt{stats} / \texttt{compare:} follow-ups are supported.
 \end{itemize}
 Evaluation is \emph{leakage-aware}: the agent's LightGBM tool is retrained on 80\% of the corpus
 and the agent is calibrated and evaluated only on the held-out 20\% (the public expert checkpoint

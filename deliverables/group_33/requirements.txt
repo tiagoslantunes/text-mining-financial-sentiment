@@ -32,7 +32,6 @@ optuna>=3.3.0
 # Agentic workflow (Extra Challenge 2)
 langchain>=0.1.0
 langchain-community>=0.0.10
-langchain-openai>=0.0.5
 
 # Tracking
 mlflow>=2.5.0

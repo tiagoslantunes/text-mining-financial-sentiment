@@ -22,12 +22,12 @@ trusted and why, (d) records per-tool latency so routing economics can be
 audited, and (e) keeps conversational memory: the user can ask follow-up
 questions ("why?", "history", "stats", "compare <tweet>").
 
-Two back-ends:
-  * build_langchain_agent(): a LangChain ReAct agent when an LLM API key is available.
-  * RuleBasedAgent (a.k.a. MockAgent): a deterministic implementation of the SAME
-    orchestration logic that runs fully offline (no API key) and is therefore
-    reproducible for grading / oral defence. All models run on CPU and are
-    cached, so the agent loads each model once.
+Per course guidance (no proprietary models, no API keys), the conversational
+layer is the deterministic RuleBasedAgent: fully offline, reproducible, and built
+exclusively on open-source models. The three tools are also exposed as LangChain
+Tool objects (get_langchain_tools) so the identical workflow could be driven by
+any locally-served open-source LLM, but nothing in this project depends on that.
+All models run on CPU and are cached, so the agent loads each model once.
 """
 
 import os
@@ -311,55 +311,41 @@ class RuleBasedAgent:
 MockAgent = RuleBasedAgent
 
 
-def build_langchain_agent(openai_api_key: str = None, strong: float = 0.50):
-    """LangChain ReAct agent when an LLM key is available; else RuleBasedAgent.
+def get_langchain_tools():
+    """The three tools as LangChain Tool objects (open-source stack only).
 
-    The deterministic RuleBasedAgent fallback implements the identical orchestration
-    logic, so the workflow runs (and is gradable) with or without an API key.
+    Provided so the identical workflow can be driven by any LOCALLY-SERVED
+    open-source LLM (e.g. via Ollama / llama.cpp + langchain-community) if
+    desired. Grading never depends on this: the deterministic RuleBasedAgent
+    below implements the same orchestration without any LLM.
     """
     try:
-        from langchain.agents import AgentExecutor, create_react_agent
         from langchain.tools import Tool
-        from langchain.prompts import PromptTemplate
-        from langchain.memory import ConversationBufferMemory
+    except ImportError as e:
+        raise ImportError("langchain is optional and not required for grading; "
+                          "install it only if you want to drive the tools with a "
+                          "locally-served open-source LLM") from e
+    return [
+        Tool(name="VADER_Sentiment", func=classify_with_vader,
+             description="Fast lexical sentiment baseline. Input: tweet. Output: label + compound."),
+        Tool(name="LightGBM_SBERT_Classifier", func=classify_with_lgbm,
+             description="ML classifier (LightGBM on SBERT). Input: tweet."),
+        Tool(name="FinBERT_Fintwitter_Expert", func=classify_with_finbert,
+             description="Financial-Twitter domain transformer (same backbone as the submitted model). Input: tweet."),
+    ]
 
-        if openai_api_key:
-            from langchain_openai import ChatOpenAI
-            llm = ChatOpenAI(api_key=openai_api_key, model="gpt-3.5-turbo", temperature=0)
-        else:
-            raise ImportError("No LLM API key available")
 
-        tools = [
-            Tool(name="VADER_Sentiment", func=classify_with_vader,
-                 description="Fast lexical sentiment baseline. Input: tweet. Output: label + compound."),
-            Tool(name="LightGBM_SBERT_Classifier", func=classify_with_lgbm,
-                 description="ML classifier (LightGBM on SBERT). Input: tweet."),
-            Tool(name="FinBERT_Fintwitter_Expert", func=classify_with_finbert,
-                 description="Financial-Twitter domain transformer (same backbone as the submitted model). Input: tweet."),
-        ]
-        agent_prompt = PromptTemplate.from_template(
-            """You are an expert financial sentiment analyst classifying tweets as
-Bearish (0), Bullish (1), or Neutral (2).
-Strategy: 1) VADER baseline; 2) if |compound|>{strong} trust it, else use LightGBM_SBERT;
-3) if VADER and LightGBM disagree, consult FinBERT_Fintwitter_Expert; 4) explain which signal you trusted.
-Tools: {tools}
-Use the format:
-Question: {input}
-Thought: ...
-Action: one of [{tool_names}]
-Action Input: the tweet
-Observation: tool result
-... (repeat as needed)
-Final Answer: FINAL VERDICT: [Bearish/Bullish/Neutral] (class=[0/1/2]) + explanation
-Chat history: {chat_history}
-Question: {input}
-Thought:{agent_scratchpad}""")
-        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=False)
-        agent = create_react_agent(llm=llm, tools=tools, prompt=agent_prompt)
-        return AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True,
-                             max_iterations=6, handle_parsing_errors=True)
-    except Exception as e:
-        if os.environ.get("AGENT_DEBUG"):
-            print(f"LangChain fallback reason: {e}")
-        print("Using deterministic RuleBasedAgent fallback for reproducible offline grading.")
-        return RuleBasedAgent(strong=strong)
+def build_langchain_agent(openai_api_key=None, strong: float = 0.50):
+    """Returns the offline RuleBasedAgent.
+
+    Per the course guideline ("we strongly advise you not to use models that are
+    not open source ... you must not share your private keys"), this project uses
+    NO proprietary LLMs and requires NO API keys. The signature keeps the legacy
+    openai_api_key argument for backwards compatibility but ignores it; the
+    deterministic agent below implements the full orchestration with open-source
+    models only. See get_langchain_tools() for the LangChain integration point.
+    """
+    if openai_api_key:
+        print("Note: proprietary LLM back-ends are disabled per course guidance; "
+              "using the open-source RuleBasedAgent.")
+    return RuleBasedAgent(strong=strong)
