@@ -1,8 +1,12 @@
-"""Run 5-fold transformer fine-tuning for one Hugging Face backbone.
+"""Enhanced 5-fold transformer fine-tuning script.
 
-This script mirrors the final notebook protocol: raw tweet text, stratified
-folds, class-weighted cross entropy, AdamW, warmup, max length 96 by default,
-and averaged test probabilities across folds.
+Key improvements over v1:
+- Best-checkpoint saving per fold (val F1, not last epoch)
+- Label smoothing
+- Cosine warmup schedule
+- Layer-wise learning rate decay (LLRD)
+- Gradient accumulation
+- fp16 instead of bf16 (avoids NaN with DeBERTa)
 """
 
 from __future__ import annotations
@@ -12,9 +16,13 @@ import gc
 import json
 import os
 import random
+import tempfile
 import time
 from pathlib import Path
 
+import re
+
+import ftfy
 import numpy as np
 import pandas as pd
 import torch
@@ -24,11 +32,24 @@ from sklearn.model_selection import StratifiedKFold
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    get_cosine_schedule_with_warmup,
     get_linear_schedule_with_warmup,
 )
 
 
 SEED = 42
+
+_TRUNC_RE = re.compile(r'[�…°]+\s*(https?://\S*)?$')
+_URL_RE    = re.compile(r'https?://\S+')
+_TRAIL_RE  = re.compile(r'[\s\-–:]+$')
+
+def fix_tweet(text: str) -> str:
+    """Fix mojibake (ftfy) and remove truncation artefacts + bare URLs."""
+    text = ftfy.fix_text(text)
+    text = _TRUNC_RE.sub('', text)
+    text = _URL_RE.sub('', text)
+    text = _TRAIL_RE.sub('', text).strip()
+    return text
 
 
 def seed_all(seed: int = SEED) -> None:
@@ -43,37 +64,66 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--tag", required=True)
-    parser.add_argument("--epochs", type=int, default=4)
-    parser.add_argument("--maxlen", type=int, default=96)
-    parser.add_argument("--lr", type=float, default=2e-5)
+    parser.add_argument("--epochs", type=int, default=5)
+    parser.add_argument("--maxlen", type=int, default=128)
+    parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--eval-batch-size", type=int, default=32)
     parser.add_argument("--n-folds", type=int, default=5)
+    parser.add_argument("--grad-accum", type=int, default=1, help="Gradient accumulation steps")
+    parser.add_argument("--label-smoothing", type=float, default=0.0)
+    parser.add_argument("--warmup-ratio", type=float, default=0.06)
+    parser.add_argument("--llrd", type=float, default=0.0, help="Layer-wise LR decay factor (0=disabled, 0.9=mild)")
+    parser.add_argument("--schedule", choices=["linear", "cosine"], default="cosine")
+    parser.add_argument("--amp-dtype", choices=["fp16", "bf16", "none"], default="fp16")
+    parser.add_argument("--fix-text", action="store_true", help="Apply ftfy mojibake fix + truncation cleanup before tokenization")
     parser.add_argument("--train-csv", default="data/raw/train.csv")
     parser.add_argument("--test-csv", default="data/raw/test.csv")
     parser.add_argument("--out-dir", default="results")
     return parser.parse_args()
 
 
-def maybe_freeze_for_cpu(model: torch.nn.Module, top_layers: int = 4) -> None:
-    """CPU fallback: train only the classifier and final encoder layers."""
-    for parameter in model.parameters():
-        parameter.requires_grad = False
+def build_optimizer_with_llrd(model, base_lr: float, weight_decay: float, llrd: float):
+    """Group parameters by layer with exponentially decaying LR."""
+    no_decay = {"bias", "LayerNorm.weight", "layer_norm.weight"}
 
     num_layers = getattr(model.config, "num_hidden_layers", None)
-    unfreeze_from = max(0, num_layers - top_layers) if num_layers is not None else None
-    for name, parameter in model.named_parameters():
-        if "classifier" in name or "score" in name:
-            parameter.requires_grad = True
-            continue
-        if unfreeze_from is not None and "encoder.layer." in name:
-            try:
-                layer_idx = int(name.split("encoder.layer.")[1].split(".")[0])
-            except (IndexError, ValueError):
-                continue
-            if layer_idx >= unfreeze_from:
-                parameter.requires_grad = True
+    if llrd == 0.0 or num_layers is None:
+        decay = [p for n, p in model.named_parameters() if p.requires_grad and not any(nd in n for nd in no_decay)]
+        no_decay_p = [p for n, p in model.named_parameters() if p.requires_grad and any(nd in n for nd in no_decay)]
+        groups = [
+            {"params": decay, "lr": base_lr, "weight_decay": weight_decay},
+            {"params": no_decay_p, "lr": base_lr, "weight_decay": 0.0},
+        ]
+        return torch.optim.AdamW(groups, lr=base_lr)
+
+    groups = []
+    for layer_idx in range(num_layers):
+        layer_lr = base_lr * (llrd ** (num_layers - 1 - layer_idx))
+        layer_prefix = f"encoder.layer.{layer_idx}."
+        decay = [
+            p for n, p in model.named_parameters()
+            if p.requires_grad and layer_prefix in n and not any(nd in n for nd in no_decay)
+        ]
+        no_decay_p = [
+            p for n, p in model.named_parameters()
+            if p.requires_grad and layer_prefix in n and any(nd in n for nd in no_decay)
+        ]
+        if decay:
+            groups.append({"params": decay, "lr": layer_lr, "weight_decay": weight_decay})
+        if no_decay_p:
+            groups.append({"params": no_decay_p, "lr": layer_lr, "weight_decay": 0.0})
+
+    # embeddings + classifier at base_lr
+    other = [
+        p for n, p in model.named_parameters()
+        if p.requires_grad and not any(f"encoder.layer.{i}." in n for i in range(num_layers))
+    ]
+    if other:
+        groups.append({"params": other, "lr": base_lr, "weight_decay": weight_decay})
+
+    return torch.optim.AdamW(groups, lr=base_lr)
 
 
 @torch.no_grad()
@@ -89,8 +139,8 @@ def predict_proba(model, tokenizer, texts, device, maxlen, eval_batch_size, amp_
             max_length=maxlen,
             return_tensors="pt",
         )
-        encoded = {key: value.to(device) for key, value in encoded.items()}
-        if device == "cuda":
+        encoded = {k: v.to(device) for k, v in encoded.items()}
+        if device == "cuda" and amp_dtype is not None:
             with torch.autocast(device_type="cuda", dtype=amp_dtype):
                 logits = model(**encoded).logits
         else:
@@ -115,24 +165,35 @@ def main() -> None:
     test = pd.read_csv(args.test_csv)
     train_texts = train["text"].astype(str).tolist()
     test_texts = test["text"].astype(str).tolist()
+    if args.fix_text:
+        print("Applying ftfy + truncation fix to all texts...")
+        train_texts = [fix_tweet(t) for t in train_texts]
+        test_texts  = [fix_tweet(t) for t in test_texts]
     y = train["label"].to_numpy()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cuda":
         batch_size = args.batch_size or 16
-        amp_dtype = torch.bfloat16
+        if args.amp_dtype == "fp16":
+            amp_dtype = torch.float16
+        elif args.amp_dtype == "bf16":
+            amp_dtype = torch.bfloat16
+        else:
+            amp_dtype = None
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         print(
             f"GPU: {torch.cuda.get_device_name(0)} | "
-            f"VRAM {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB"
+            f"VRAM {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB | "
+            f"AMP: {args.amp_dtype}"
         )
     else:
         batch_size = args.batch_size or 8
         amp_dtype = None
         torch.set_num_threads(min(12, os.cpu_count() or 1))
-        print("CPU fallback: classifier + top encoder layers only")
+        print("CPU fallback")
 
+    effective_batch = batch_size * args.grad_accum
     counts = np.bincount(y, minlength=3)
     class_weights = torch.tensor(len(y) / (3 * counts), dtype=torch.float32, device=device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
@@ -149,71 +210,116 @@ def main() -> None:
             args.model_name,
             num_labels=3,
             ignore_mismatched_sizes=True,
+            dtype=torch.float32,   # force fp32 params so GradScaler works correctly
         )
-        if device == "cpu":
-            maybe_freeze_for_cpu(model)
         model.to(device)
         model.train()
 
-        params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = build_optimizer_with_llrd(model, args.lr, args.weight_decay, args.llrd)
         steps_per_epoch = int(np.ceil(len(train_idx) / batch_size))
-        total_steps = steps_per_epoch * args.epochs
-        scheduler = get_linear_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=int(0.1 * total_steps),
-            num_training_steps=total_steps,
+        total_steps = (steps_per_epoch // args.grad_accum) * args.epochs
+        warmup_steps = int(args.warmup_ratio * total_steps)
+
+        if args.schedule == "cosine":
+            scheduler = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+        else:
+            scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+
+        loss_fn = nn.CrossEntropyLoss(
+            weight=class_weights,
+            label_smoothing=args.label_smoothing,
         )
-        loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+
+        # GradScaler for fp16 — essential for DeBERTa-v3 (disentangled attention overflows without it)
+        use_scaler = (device == "cuda" and amp_dtype == torch.float16)
+        scaler = torch.amp.GradScaler("cuda") if use_scaler else None
 
         fold_texts = [train_texts[i] for i in train_idx]
         fold_labels = y[train_idx]
-        for epoch in range(args.epochs):
-            order = np.random.permutation(len(fold_texts))
-            running = 0.0
-            epoch_started = time.time()
-            for start in range(0, len(order), batch_size):
-                idx = order[start : start + batch_size]
-                batch_texts = [fold_texts[i] for i in idx]
-                batch_labels = torch.tensor(fold_labels[idx], dtype=torch.long, device=device)
-                encoded = tokenizer(
-                    batch_texts,
-                    padding=True,
-                    truncation=True,
-                    max_length=args.maxlen,
-                    return_tensors="pt",
-                )
-                encoded = {key: value.to(device) for key, value in encoded.items()}
+
+        best_fold_f1 = -1.0
+        best_oof_proba = None
+        best_test_proba = None
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            best_ckpt = Path(tmpdir) / "best.pt"
+
+            for epoch in range(args.epochs):
+                model.train()
+                order = np.random.permutation(len(fold_texts))
+                running = 0.0
+                epoch_started = time.time()
                 optimizer.zero_grad(set_to_none=True)
-                if device == "cuda":
-                    with torch.autocast(device_type="cuda", dtype=amp_dtype):
+                update_step = 0
+                for step, start in enumerate(range(0, len(order), batch_size)):
+                    idx = order[start : start + batch_size]
+                    batch_texts = [fold_texts[i] for i in idx]
+                    batch_labels = torch.tensor(fold_labels[idx], dtype=torch.long, device=device)
+                    encoded = tokenizer(
+                        batch_texts,
+                        padding=True,
+                        truncation=True,
+                        max_length=args.maxlen,
+                        return_tensors="pt",
+                    )
+                    encoded = {k: v.to(device) for k, v in encoded.items()}
+                    if device == "cuda" and amp_dtype is not None:
+                        with torch.autocast(device_type="cuda", dtype=amp_dtype):
+                            loss = loss_fn(model(**encoded).logits, batch_labels)
+                    else:
                         loss = loss_fn(model(**encoded).logits, batch_labels)
-                else:
-                    loss = loss_fn(model(**encoded).logits, batch_labels)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(params, 1.0)
-                optimizer.step()
-                scheduler.step()
-                running += float(loss.item())
-            print(
-                f"fold {fold}/{args.n_folds} epoch {epoch + 1}/{args.epochs} "
-                f"loss={running / steps_per_epoch:.4f} "
-                f"time={time.time() - epoch_started:.0f}s"
+
+                    loss = loss / args.grad_accum
+                    if use_scaler:
+                        scaler.scale(loss).backward()
+                    else:
+                        loss.backward()
+                    running += float(loss.item()) * args.grad_accum
+
+                    if (step + 1) % args.grad_accum == 0 or (start + batch_size) >= len(order):
+                        if use_scaler:
+                            scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            [p for p in model.parameters() if p.requires_grad], 1.0
+                        )
+                        if use_scaler:
+                            scaler.step(optimizer)
+                            scaler.update()
+                        else:
+                            optimizer.step()
+                        scheduler.step()
+                        optimizer.zero_grad(set_to_none=True)
+                        update_step += 1
+
+                valid_texts = [train_texts[i] for i in valid_idx]
+                valid_proba = predict_proba(
+                    model, tokenizer, valid_texts, device, args.maxlen, args.eval_batch_size, amp_dtype
+                )
+                epoch_f1 = f1_score(y[valid_idx], valid_proba.argmax(axis=1), average="macro")
+
+                print(
+                    f"fold {fold}/{args.n_folds} epoch {epoch + 1}/{args.epochs} "
+                    f"loss={running / steps_per_epoch:.4f} "
+                    f"val_f1={epoch_f1:.6f} "
+                    f"time={time.time() - epoch_started:.0f}s"
+                    + (" *** best ***" if epoch_f1 > best_fold_f1 else "")
+                )
+
+                if epoch_f1 > best_fold_f1:
+                    best_fold_f1 = epoch_f1
+                    best_oof_proba = valid_proba.copy()
+                    torch.save(model.state_dict(), best_ckpt)
+
+            # reload best checkpoint for test predictions
+            model.load_state_dict(torch.load(best_ckpt, map_location=device))
+            best_test_proba = predict_proba(
+                model, tokenizer, test_texts, device, args.maxlen, args.eval_batch_size, amp_dtype
             )
 
-        valid_texts = [train_texts[i] for i in valid_idx]
-        valid_proba = predict_proba(
-            model, tokenizer, valid_texts, device, args.maxlen, args.eval_batch_size, amp_dtype
-        )
-        oof[valid_idx] = valid_proba
-        valid_pred = valid_proba.argmax(axis=1)
-        fold_f1 = f1_score(y[valid_idx], valid_pred, average="macro")
-        fold_scores.append(fold_f1)
-        print(f"fold {fold} valid macro-F1={fold_f1:.6f}")
-
-        test_prob_sum += predict_proba(
-            model, tokenizer, test_texts, device, args.maxlen, args.eval_batch_size, amp_dtype
-        )
+        oof[valid_idx] = best_oof_proba
+        fold_scores.append(best_fold_f1)
+        test_prob_sum += best_test_proba
+        print(f"fold {fold} best val macro-F1={best_fold_f1:.6f}")
 
         del model
         gc.collect()
@@ -233,7 +339,7 @@ def main() -> None:
         "Accuracy": float(accuracy_score(y, oof_pred)),
         "Precision-macro": float(precision_score(y, oof_pred, average="macro", zero_division=0)),
         "Recall-macro": float(recall_score(y, oof_pred, average="macro", zero_division=0)),
-        "per_fold_f1": [float(score) for score in fold_scores],
+        "per_fold_f1": [float(s) for s in fold_scores],
         "elapsed_min": float((time.time() - started) / 60),
         "test_dist": np.bincount(test_pred, minlength=3).astype(int).tolist(),
         "recipe": {
@@ -242,10 +348,18 @@ def main() -> None:
             "lr": args.lr,
             "weight_decay": args.weight_decay,
             "batch_size": batch_size,
+            "effective_batch_size": effective_batch,
+            "grad_accum": args.grad_accum,
+            "label_smoothing": args.label_smoothing,
+            "warmup_ratio": args.warmup_ratio,
+            "llrd": args.llrd,
+            "schedule": args.schedule,
+            "amp_dtype": args.amp_dtype,
             "eval_batch_size": args.eval_batch_size,
             "n_folds": args.n_folds,
             "class_weighted_loss": True,
-            "raw_text": True,
+            "best_checkpoint_per_fold": True,
+            "fix_text": args.fix_text,
         },
     }
 

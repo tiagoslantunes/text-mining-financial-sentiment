@@ -1,7 +1,5 @@
 """Feature engineering: BoW, TF-IDF, Word2Vec, GloVe, Transformer encoders.
 
-Follows the professor's Lab 1 (CountVectorizer, TfidfVectorizer),
-Lab 2 (Word2Vec + GloVe average pooling), and Lab 4 (CLS embeddings) approaches.
 """
 
 import re
@@ -11,6 +9,9 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from gensim.models import Word2Vec
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import textstat
+import gensim.downloader as api
+from transformers import AutoTokenizer, AutoModel
+from sentence_transformers import SentenceTransformer
 
 try:
     import torch
@@ -91,7 +92,6 @@ def load_glove_twitter(dim: int = 100):
     Trained on 2B tweets — ideal for financial tweet classification
     (Barbieri et al., 2020).
     """
-    import gensim.downloader as api
     return api.load(f"glove-twitter-{dim}")
 
 
@@ -113,8 +113,6 @@ def get_bert_embeddings(texts, model_name: str, batch_size: int = 32,
     Returns:
         (N, hidden_size) numpy array.
     """
-    from transformers import AutoTokenizer, AutoModel
-    import torch
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name)
@@ -138,7 +136,6 @@ def get_bert_embeddings(texts, model_name: str, batch_size: int = 32,
 def get_sbert_embeddings(texts, model_name: str = "all-mpnet-base-v2",
                          batch_size: int = 32) -> np.ndarray:
     """Sentence-BERT embeddings — Reimers & Gurevych (2019)."""
-    from sentence_transformers import SentenceTransformer
     model = SentenceTransformer(model_name)
     return model.encode(texts, batch_size=batch_size,
                         show_progress_bar=True, normalize_embeddings=True)

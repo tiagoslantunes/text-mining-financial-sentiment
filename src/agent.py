@@ -335,17 +335,10 @@ def get_langchain_tools():
     ]
 
 
-def build_langchain_agent(openai_api_key=None, strong: float = 0.50):
-    """Returns the offline RuleBasedAgent.
-
-    Per the course guideline ("we strongly advise you not to use models that are
-    not open source ... you must not share your private keys"), this project uses
-    NO proprietary LLMs and requires NO API keys. The signature keeps the legacy
-    openai_api_key argument for backwards compatibility but ignores it; the
-    deterministic agent below implements the full orchestration with open-source
-    models only. See get_langchain_tools() for the LangChain integration point.
+def build_agent(strong: float = 0.50):
+    """Build the agent. This project uses only open-source models and needs no
+    API key: the deterministic RuleBasedAgent implements the full orchestration
+    offline. ``get_langchain_tools()`` exposes the same tools for any
+    locally-served open-source LLM, but nothing here depends on it.
     """
-    if openai_api_key:
-        print("Note: proprietary LLM back-ends are disabled per course guidance; "
-              "using the open-source RuleBasedAgent.")
     return RuleBasedAgent(strong=strong)

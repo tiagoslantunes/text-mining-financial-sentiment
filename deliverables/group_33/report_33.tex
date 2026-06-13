@@ -98,7 +98,7 @@
 % ── Convenience ───────────────────────────────────────
 \newcommand{\ttt}[1]{\texttt{\hyphenchar\font=`\-\relax #1}}
 
-% ── Submitted (distilled) model metrics — single source of truth ──
+% ── Distilled single-model metrics (extra work) — single source of truth ──
 \newcommand{\distf}{0.9139}    % OOF macro-F1 of the distilled student (12 epochs)
 \newcommand{\distacc}{0.9334}  % OOF accuracy of the distilled student
 
@@ -139,9 +139,11 @@ financial Twitter text reaches an out-of-fold macro-F1 of \textbf{0.9082}, beati
 (435M, 0.8889). As extra work, a weighted soft-vote \textbf{ensemble} of eight encoders --- with
 weights found by exhaustive out-of-fold grid search --- attains \textbf{0.9201}, a statistically
 significant gain over the best individual model (bootstrap 95\% CI of the difference:
-$[+0.007, +0.017]$). To comply with the single-model delivery rule, we \textbf{distil} this
-ensemble into one FinBERT student (Hinton et al., 2015), our \textbf{submitted single-model
-solution} at OOF macro-F1 \textbf{\distf}. We additionally show that a fine-tuned \textbf{GPT-2
+$[+0.007, +0.017]$). The instructor confirmed that an ensemble is an acceptable final solution
+when it forms a single integrated end-to-end pipeline, so this weighted soft-vote ensemble is our
+\textbf{submitted solution}. We additionally \textbf{distil} it into one FinBERT student (Hinton
+et al., 2015) at OOF macro-F1 \textbf{\distf} (extra work), showing the ensemble compresses into a
+single 110M-parameter model. We additionally show that a fine-tuned \textbf{GPT-2
 decoder} classifies at macro-F1 0.7724 (whereas few-shot prompting collapses to the majority
 class), and that an offline \textbf{agentic workflow} adaptively routes tweets between VADER,
 LightGBM/SBERT and FinBERT with conversational explanations.
@@ -355,31 +357,114 @@ $\approx$0.4pp without changing any ranking.)
 
 % ── 4. Feature Engineering ───────────────────────────────────────
 \section{Feature Engineering}
-Eleven feature representations are computed, covering the three families required by the brief:
-bag-of-words, Word2Vec and Transformer Encoder.
 
-\subsection{Sparse Representations (BoW)}
-Four sparse sets on raw text: \textbf{BoW} (binary CountVectorizer, \texttt{max\_features=20k},
-\texttt{min\_df=2}); \textbf{TF--IDF 1g} (\texttt{max\_features=20k}, \texttt{max\_df=0.80},
-\texttt{min\_df=2}); \textbf{TF--IDF 2g} (uni+bigram, \texttt{max\_features=50k}); and
-\textbf{TF--IDF char} (char 3--5-gram, \texttt{max\_features=30k}).
+Feature engineering converts each tweet into a numerical vector that a classifier can process.
+Eleven representations were built across four families, progressing from sparse and interpretable
+baselines to rich contextual embeddings.
 
-\subsection{Word Embeddings (Word2Vec / GloVe)}
-\textbf{Word2Vec Skip-gram} and \textbf{CBOW} (200d) trained on the corpus (Mikolov et al., 2013),
-pooled by TF--IDF-weighted mean; and \textbf{GloVe-Twitter-100} pre-trained on 2B tweets
-(Pennington et al., 2014).
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llrll}
+\toprule
+\textbf{Family} & \textbf{Representation} & \textbf{Dim} & \textbf{Alignment} & \textbf{Rubric} \\
+\midrule
+Sparse  & BoW (binary)                  & $\leq$20k & —                        & Base \\
+        & TF-IDF unigrams               & $\leq$20k & —                        & Base \\
+        & TF-IDF unigrams+bigrams       & $\leq$50k & Financial expressions    & Base \\
+        & TF-IDF char 3–5grams          & $\leq$30k & Twitter spelling noise   & Base \\
+\midrule
+Static  & Word2Vec Skip-gram            & 200       & In-domain corpus         & Base \\
+        & Word2Vec CBOW                 & 200       & In-domain corpus         & Base \\
+        & GloVe-Twitter-100             & 100       & Twitter (2B tweets)      & Base \\
+\midrule
+Contextual & FinBERT CLS               & 768       & Finance                  & Base (obligatory) \\
+           & SBERT all-mpnet           & 768       & General-purpose          & \textbf{EXTRA} \\
+           & Twitter-RoBERTa CLS       & 768       & Twitter (58M tweets)     & \textbf{EXTRA} \\
+\midrule
+Hand-crafted & Financial features      & 14        & Finance + Twitter surface & Base \\
+\bottomrule
+\end{tabular}
+\caption{Feature representations implemented. Representations marked \textbf{EXTRA} are
+additional Transformer Encoder methods beyond the base requirement.}
+\label{tab:features}
+\end{table}
 
-\subsection{Transformer Embeddings (Encoder)}
-Three transformer representations (CLS / mean-pooling): \textbf{FinBERT} (Araci, 2019);
-\textbf{SBERT all-mpnet-base-v2} (Reimers \& Gurevych, 2019; +0.50 extra); and
-\textbf{Twitter--RoBERTa} (Barbieri et al., 2020; +0.50 extra). The latter two count as additional
-Transformer Encoder methods for the extra-work criterion, and the Twitter--RoBERTa family is carried
-forward to end-to-end fine-tuning in Section~5.2.
+\subsection{Sparse Representations (BoW and TF-IDF)}
+
+Both BoW and TF-IDF represent each tweet as a vector with one position per vocabulary word.
+Binary BoW records word presence/absence and serves as an interpretable lower bound.
+TF-IDF improves on this by weighting each word by how distinctive it is across the corpus:
+rare financial terms like \textit{downgrade} or \textit{beats} receive high weight while common
+words are suppressed. The unigram+bigram variant adds two-word sequences to capture financial
+expressions such as \textit{price target} or \textit{earnings beat} that vanish at the word
+level. The character 3–5gram variant operates on overlapping character sequences, making the
+representation robust to Twitter spelling noise (\textit{bullllish} and \textit{bullish} share
+most character sequences and produce similar vectors). All sparse methods share a fundamental
+limitation: they treat words independently, with no notion of order or context.
+
+\subsection{Static Word Embeddings (Word2Vec and GloVe)}
+
+Word2Vec learns a dense vector per word by training a neural network to predict words from
+their context, so semantically related words end up numerically close : \textit{bullish} and
+\textit{optimistic} become neighbours in the vector space. Skip-gram predicts context from the
+centre word and handles rare financial terms better; CBOW predicts the centre word from context
+and is stronger on frequent vocabulary. Both 200-dimensional models are trained on the 9,543
+in-domain tweets. GloVe-Twitter-100, pre-trained on 2 billion tweets,
+provides broader coverage of informal Twitter language at the cost of financial specificity.
+Each tweet is represented by mean pooling its token vectors. The key remaining limitation is
+context-insensitivity: the vector for \textit{cut} is identical in \textit{Fed cuts rates} and
+\textit{analyst cuts target}, despite opposite implications.
+
+\subsection{Contextual Transformer CLS Embeddings}
+
+Transformer encoders solve context-insensitivity by reading the entire sequence through
+self-attention, where each word's representation is shaped by all other words in the tweet.
+A special \texttt{[CLS]} token accumulates this information across all encoder layers, producing
+a 768-dimensional contextualised summary of the tweet. Three encoders
+are used in frozen mode (weights not updated) as pure feature extractors.
+
+\textbf{FinBERT} (Araci, 2019), fine-tuned on financial news and earnings reports, provides
+direct domain alignment for financial vocabulary and sentiment. However, its training corpus
+is formal text, which limits its ability to handle the informal language, abbreviations, and
+noise typical of Twitter.
+
+\textbf{SBERT all-mpnet-base-v2} (Reimers \& Gurevych, 2019) is trained with contrastive
+objectives, producing embeddings well-suited for similarity-based classifiers — however, it
+has no alignment with either financial text or Twitter language.
+\textbf{This constitutes Extra Work \#1 under the Feature Engineering criterion.}
+
+\textbf{Twitter-RoBERTa} (Barbieri et al., 2020), pre-trained on 58M tweets, handles informal
+language, abbreviations, and the noisy writing style typical of Twitter — however, its
+pre-training corpus is general Twitter data, not financial text specifically, so it may miss
+domain-specific vocabulary.
+\textbf{This constitutes Extra Work \#2 under the Feature Engineering criterion.}
+
+PCA projections of the three encoder spaces confirmed that FinBERT (47.1\% variance explained)
+and Twitter-RoBERTa (52.0\%) produce visibly cleaner class separation than SBERT (7.7\%).
+This diagnostic is not used as a model-selection criterion: PCA measures how much variance a
+two-dimensional projection preserves, not supervised class-discriminative power. Model choice in
+Section~5 is therefore based on validation macro-F1.
 
 \subsection{Financial Hand-crafted Features}
-A 14-dimensional vector combines VADER scores (Hutto \& Gilbert, 2014) with surface statistics
-(cashtag/hashtag/mention/URL counts, length, capitalisation, punctuation) and a Flesch--Kincaid
-readability score.
+
+A 14-dimensional vector captures Twitter surface signals that no unsupervised embedding learns
+by design: VADER sentiment scores (\textit{pos}, \textit{neg}, \textit{neu}, \textit{compound};
+Hutto \& Gilbert, 2014), cashtag, hashtag, mention and URL counts, word and character count,
+exclamation and question marks, all-caps ratio, and Flesch readability score. A fusion
+experiment concatenating these features with SBERT embeddings (782 dimensions total) yielded
+a marginal gain of +0.0032 F1-macro, suggesting SBERT already captures most surface signal
+implicitly: a useful negative result that informed the final feature-set decision. SBERT is used
+here as a conservative semantic baseline for the hand-crafted-feature ablation; the stronger
+RoBERTa and FinBERT encoders are evaluated separately in the classical and fine-tuned model
+comparisons, where the final selection is made by supervised validation performance.
+
+\textbf{Reproducibility.} All eleven representations are produced by a single deterministic script,
+\nolinkurl{scripts/generate_features.py} (seed 42), which executes the functions in
+\nolinkurl{src/features.py} and writes the dense matrices to \nolinkurl{data/processed/} and the
+fitted vectorisers to \nolinkurl{results/models/}. Because the dense embeddings total 153\,MB they
+are not bundled with the submission; the feature-loading cell in \nolinkurl{tm_tests_33.ipynb}
+regenerates them on demand.
 
 % ── 5. Classification Models ─────────────────────────────────────
 \section{Classification Models}
@@ -449,10 +534,10 @@ the 0.8021 frozen-embedding baseline and +0.0139 over our previous submission ca
 +0.26pp at no architectural cost (Section~3.2); (ii) LLRD ties the best model (0.9080) but trains
 with different layer dynamics --- useful diversity for the ensemble below.
 
-\subsection{Ensemble and Knowledge Distillation (Extra Work)}
+\subsection{Weighted Soft-Vote Ensemble (Submitted) and Distillation (Extra Work)}
 \label{sec:distill}
-The backbone search leaves us with several strong, partially decorrelated encoders. As extra work
-we combine them by \textbf{weighted soft-voting}: test probabilities are averaged with per-model
+The backbone search leaves us with several strong, partially decorrelated encoders. We combine them
+by \textbf{weighted soft-voting}: test probabilities are averaged with per-model
 weights found by \emph{exhaustive} OOF grid search --- all $2^8$ model subsets crossed with weights
 $\{0.25, 0.5, 0.75, 1.0\}$, evaluated on leak-free OOF predictions. The optimum keeps eight models
 (four at weight 1.0, three at 0.75, one at 0.5) and reaches OOF macro-F1 \textbf{0.9201} ---
@@ -460,9 +545,12 @@ $\{0.25, 0.5, 0.75, 1.0\}$, evaluated on leak-free OOF predictions. The optimum 
 (1{,}000 resamples) puts the 95\% confidence interval of this gain at $[+0.0066, +0.0172]$,
 excluding zero: the improvement is real, not resampling noise (Section~6.3).
 
-The delivery rules, however, require the final solution to be \emph{``a single pipeline with a
-single classification model''} (Guidelines~5.2). Rather than discard the ensemble or break the
-rule, we \textbf{distil} it (Hinton et al., 2015): the eight-model ensemble becomes the
+The instructor confirmed (e-mail, June 2026) that an ensemble is an acceptable final solution
+provided it is \emph{a single integrated end-to-end pipeline that consumes the input in a unified
+way through to the prediction}; \nolinkurl{tm_final_33.ipynb} is exactly such a weighted soft-vote
+pipeline, so \textbf{this ensemble is the submitted solution} (\nolinkurl{pred_33.csv}). As
+further extra work we also \textbf{distil} the ensemble (Hinton et al., 2015): the eight-model
+ensemble becomes the
 \emph{teacher}, and a single FinBERT-fintwitter student is trained on the combined objective
 \[
 \mathcal{L} \;=\; (1-\alpha)\,\mathrm{CE}_{\text{weighted}}(y, p_s)
@@ -482,10 +570,10 @@ with the calibration analysis of Section~6.3. The distilled
 student reaches OOF macro-F1 \textbf{\distf} (accuracy \distacc) --- recovering 48\% of the
 ensemble's gain in a single 110M-parameter model, itself a statistically significant improvement
 over the best conventionally-trained encoder (paired bootstrap 95\% CI: $[+0.0023, +0.0094]$).
-This is the \textbf{submitted solution} (\nolinkurl{pred_33.csv}, produced by the single pipeline
-in \nolinkurl{tm_final_33.ipynb}).
+It is reported as \textbf{extra work} --- a demonstration that the submitted ensemble can be
+compressed into a single model with minimal loss of accuracy.
 
-\subsection{Decoder Model --- Fine-tuned GPT-2 (Extra Work, +1.00 pt)}
+\subsection{Decoder Model --- Fine-tuned GPT-2 (Extra Work)}
 As decoder-based extra work we use a \emph{decoder} (causal) language model for classification.
 \textbf{GPT-2} (Radford et al., 2019) is fine-tuned end-to-end with a sequence-classification head
 (\texttt{GPT2ForSequenceClassification}, which pools the last non-pad token) under the same 5-fold
@@ -518,7 +606,7 @@ combines stronger, more diverse base models.
 \subsection{Model Comparison}
 Figure~\ref{fig:results} ranks the top configurations and Table~\ref{tab:results} lists the top
 models. The eight-encoder ensemble (extra work) tops the ranking at OOF macro-F1 \textbf{0.9201};
-the \textbf{submitted single model} --- the FinBERT student distilled from it --- follows at
+and is our \textbf{submitted solution}; the distilled single model (extra work) follows at
 \textbf{\distf}, ahead of every conventionally-trained encoder. The progression of the project is
 visible in the table: frozen embeddings plateau at $\sim$0.80, generic fine-tuned encoders reach
 0.88--0.89, the domain-matched FinBERT reaches 0.91, and ensembling plus distillation extracts the
@@ -528,7 +616,7 @@ last point.
   \centering
   \includegraphics[width=0.84\linewidth]{report_results.png}
   \caption{Model comparison under the common OOF protocol (transformers: 10-fold; classical
-  models: 5-fold). Green bars: ensemble teacher and submitted distilled student.}
+  models: 5-fold). Green bars: the submitted ensemble and its distilled single-model variant.}
   \label{fig:results}
 \end{figure}
 
@@ -540,8 +628,8 @@ last point.
     \toprule
     \tH{Model} & \tH{F1$_{\text{mac}}$} & \tH{$\sigma$} & \tH{Acc.} & \tH{Prec.} & \tH{Rec.} \\
     \gmid
-    Ensemble, 8 encoders, optimised weights \emph{(extra)} & 0.9201 & --- & 0.9357 & 0.9097 & 0.9315 \\
-    \rowcolor{lightgray} Distilled FinBERT student \textbar{} \textbf{submitted} & \textbf{\distf} & 0.0093 & \distacc & 0.9032 & 0.9258 \\
+    \rowcolor{lightgray} Ensemble, 8 encoders \textbar{} \textbf{submitted} & \textbf{0.9201} & --- & 0.9357 & 0.9097 & 0.9315 \\
+    Distilled FinBERT student \emph{(extra)} & \distf & 0.0093 & \distacc & 0.9032 & 0.9258 \\
     FinBERT-fintwitter 10ep + fix\_text                 & 0.9082 & 0.0098 & 0.9293 & 0.9008 & 0.9163 \\
     FinBERT-fintwitter 7ep + LLRD                       & 0.9080 & 0.0099 & 0.9285 & 0.8967 & 0.9206 \\
     Twitter-RoBERTa-large topic-sent.\ (prev.\ subm.)   & 0.8943 & 0.0100 & 0.9141 & 0.8857 & 0.9036 \\
@@ -553,7 +641,7 @@ last point.
     \bottomrule
   \end{tabularx}
   \caption{Top models by OOF macro-F1 (transformers: 10-fold; classical/stacking: 5-fold). The
-  shaded row is the \textbf{submitted} single model; rows marked \emph{(extra)} are extra work.
+  shaded row is the \textbf{submitted} ensemble; rows marked \emph{(extra)} are extra work.
   SMOTE improves the dense-embedding classical baseline by +0.6pp over class weighting but is
   irrelevant at transformer level, where the class-weighted loss already handles imbalance.}
   \label{tab:results}
@@ -566,13 +654,13 @@ a 110M FinBERT beats a 435M DeBERTa-v3-large by $\sim$2pp; (4) text repair (fix\
 +0.26pp; (5) ensemble knowledge survives compression into a single student model.
 
 \subsection{Error Analysis}
-Figure~\ref{fig:cm} shows the confusion matrix of the submitted model. Per class it reaches F1 of
-\textbf{0.871} (Bearish), \textbf{0.917} (Bullish) and \textbf{0.954} (Neutral). Errors concentrate
+Figure~\ref{fig:cm} shows the confusion matrix of the submitted ensemble. Per class it reaches F1 of
+\textbf{0.895} (Bearish), \textbf{0.912} (Bullish) and \textbf{0.953} (Neutral). Errors concentrate
 exactly where the EDA predicted (Section~2.4): the Neutral/directional boundary. Neutral tweets
 drift into Bullish/Bearish when they report factual but direction-laden news (``price target
 raised''), and directional tweets get softened into Neutral when the polarity is implicit. Bearish
 remains the hardest class --- it is both the smallest (15.1\%) and the most mojibake-affected after
-Neutral. On the held-out test set the model predicts 390 Bearish, 492 Bullish and 1{,}506 Neutral
+Neutral. On the held-out test set the model predicts 385 Bearish, 497 Bullish and 1{,}506 Neutral
 (of 2{,}388) --- close to the training prior. Part of the residual error is the \emph{labels}, not
 the model: the eight-encoder ensemble contradicts the gold label with $\geq$95\% confidence on
 0.48\% of training tweets (e.g.\ ``Baird returns to Wingstop \emph{bull camp}'' is labelled
@@ -583,8 +671,8 @@ corpus.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.96\linewidth]{confusion_matrix_distilled.pdf}
-  \caption{Confusion matrix of the submitted distilled FinBERT (normalised left, absolute counts
+  \includegraphics[width=0.96\linewidth]{confusion_matrix_ensemble.pdf}
+  \caption{Confusion matrix of the submitted ensemble (normalised left, absolute counts
   right), from 10-fold out-of-fold predictions.}
   \label{fig:cm}
 \end{figure}
@@ -607,7 +695,7 @@ probabilities (confidence-bucket accuracy matches predicted confidence within $\
 so no post-hoc calibration is applied to the submission.
 
 % ── 7. Agentic Workflow ──────────────────────────────────────────
-\section{Extra Challenge 2 --- Agentic Workflow (+1.50 pts)}
+\section{Extra Challenge 2 --- Agentic Workflow}
 We implement a conversational agent that orchestrates three classifiers with \emph{non-trivial},
 adaptive routing. The implementation lives in \nolinkurl{src/agent.py} and
 \nolinkurl{notebooks/08_Agentic_Workflow.ipynb}. Following the course guideline on model choice,
@@ -622,7 +710,12 @@ free-form phrases to the agent.
 The agent exposes three tools of escalating cost --- \tH{VADER} (lexical baseline,
 $\sim$0.1\,ms), \tH{LightGBM+SBERT} (ML model trained in this project, $\sim$25\,ms) and
 \tH{FinBERT-fintwitter} (the \emph{same domain backbone our submission fine-tunes}, used
-zero-shot as the expert, $\sim$150\,ms) --- and routes adaptively:
+zero-shot as the expert, $\sim$150\,ms) --- and routes adaptively.
+SBERT is deliberately used for the middle-cost tool because it is fast and stable for
+sentence-level semantic classification; the stronger but slower FinBERT expert is reserved for
+disagreements. This is a cost-aware routing decision, not a claim that SBERT is the strongest
+encoder overall.
+The routing policy is:
 \begin{itemize}
   \item VADER gives a quick lexical reading; if $|\text{compound}| > \tau$ it is trusted directly.
   The threshold $\tau$ is \emph{calibrated on data}, not hand-picked: a sweep on 400 held-out
@@ -640,24 +733,23 @@ and the agent is calibrated and evaluated only on the held-out 20\% (the public 
 saw the train split, which we disclose; routing shares and latency are unaffected). On 400
 held-out tweets the agent reaches accuracy 0.873 (macro-F1 0.833), resolving 44\% of tweets with
 cheap tools and cutting mean latency by 18\% versus always calling the expert (0.915) --- the
-quantified cost/accuracy trade-off that motivates agentic routing. The submitted distilled model
+quantified cost/accuracy trade-off that motivates agentic routing. The submitted ensemble
 remains the accuracy reference; the agent demonstrates \emph{orchestration under a cost budget},
 is deterministic, and is reproducible for the oral defence without any API key.
 
 % ── 8. Conclusion ────────────────────────────────────────────────
 \section{Conclusion}
 This work delivers a complete NLP pipeline for financial tweet sentiment classification. Our
-\textbf{submitted single-model solution} --- one FinBERT encoder trained by \textbf{knowledge
-distillation} from an eight-encoder ensemble teacher --- achieves an out-of-fold macro-F1 of
-\textbf{\distf} (accuracy \distacc), a \textbf{+0.112} gain over the 0.8021 classical baseline,
-while remaining a single 110M-parameter classifier. Key contributions: (1) a text-quality audit
+\textbf{submitted solution} --- a weighted soft-vote \textbf{ensemble} of eight fine-tuned
+encoders --- achieves an out-of-fold macro-F1 of \textbf{0.9201} (accuracy 0.9357), a
+\textbf{+0.118} gain over the 0.8021 classical baseline. Key contributions: (1) a text-quality audit
 showing the corpus is corrupted at source, and a repair step (\texttt{ftfy} fix\_text) worth
 +0.26pp at transformer level --- whereas \emph{destructive} preprocessing consistently hurts;
 (2) systematic evaluation of 11 feature representations and 12 model families under a common
 seeded protocol; (3) a nine-configuration transformer backbone search showing that
 \emph{domain-matched pre-training beats parameter count} (110M FinBERT $>$ 435M DeBERTa-v3-large
-by $\sim$2pp); (4, extra) a weighted soft-vote ensemble (0.9201) whose gain is statistically
-significant, compressed into the submitted student with 44\% of the gain retained; (5, extra) a
+by $\sim$2pp); (4, extra) knowledge distillation that compresses the submitted ensemble into a single
+FinBERT (0.9139, retaining 44\% of the ensemble gain in one model); (5, extra) a
 fine-tuned GPT-2 \emph{decoder} classifier (0.7724) with the finding that few-shot prompting of a
 small decoder collapses to the majority class; (6, extra) an explainable, reproducible agentic
 workflow. Future work could explore label-noise auditing of the Neutral boundary, domain-adaptive

@@ -77,6 +77,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--temperature", type=float, default=2.0)
     p.add_argument("--max-folds", type=int, default=0,
                    help="if >0, train only the first k folds (fast hyperparameter proxy)")
+    p.add_argument("--rdrop", type=float, default=0.0,
+                   help="R-Drop coefficient (Liang et al., 2021): symmetric KL between two "
+                        "stochastic forward passes; 0 disables")
     p.add_argument("--warmup-ratio", type=float, default=0.06)
     p.add_argument("--weights-json", default="results/tables/ensemble_optimal_result.json")
     p.add_argument("--train-csv", default="data/raw/train.csv")
@@ -191,13 +194,27 @@ def main() -> None:
                                     max_length=args.maxlen, return_tensors="pt")
                     enc = {k: v.to(device) for k, v in enc.items()}
                     optimizer.zero_grad(set_to_none=True)
+
+                    def kd_objective(logits):
+                        loss_ce = ce_loss(logits, bl)
+                        log_student_T = F.log_softmax(logits / T, dim=1)
+                        loss_kd = F.kl_div(log_student_T, bsoft, reduction="batchmean") * (T * T)
+                        return (1 - alpha) * loss_ce + alpha * loss_kd
+
                     if device == "cuda":
                         with torch.autocast(device_type="cuda", dtype=amp):
                             logits = model(**enc).logits
-                            loss_ce = ce_loss(logits, bl)
-                            log_student_T = F.log_softmax(logits / T, dim=1)
-                            loss_kd = F.kl_div(log_student_T, bsoft, reduction="batchmean") * (T * T)
-                            loss = (1 - alpha) * loss_ce + alpha * loss_kd
+                            if args.rdrop > 0:
+                                logits2 = model(**enc).logits   # second stochastic forward
+                                lp1 = F.log_softmax(logits, dim=1)
+                                lp2 = F.log_softmax(logits2, dim=1)
+                                kl_sym = 0.5 * (
+                                    F.kl_div(lp1, lp2.exp(), reduction="batchmean")
+                                    + F.kl_div(lp2, lp1.exp(), reduction="batchmean"))
+                                loss = (0.5 * (kd_objective(logits) + kd_objective(logits2))
+                                        + args.rdrop * kl_sym)
+                            else:
+                                loss = kd_objective(logits)
                         scaler.scale(loss).backward()
                         scaler.unscale_(optimizer)
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -265,8 +282,9 @@ def main() -> None:
         "recipe": {
             "epochs": args.epochs, "maxlen": args.maxlen, "lr": args.lr,
             "batch_size": args.batch_size, "n_folds": args.n_folds,
-            "alpha": alpha, "temperature": T, "fix_text": True,
-            "loss": "(1-a)*weighted_CE + a*T^2*KL(student||teacher)",
+            "alpha": alpha, "temperature": T, "fix_text": True, "rdrop": args.rdrop,
+            "loss": "(1-a)*weighted_CE + a*T^2*KL(student||teacher)"
+                    + (" + rdrop*KL_sym(fwd1||fwd2)" if args.rdrop > 0 else ""),
         },
     }
 
