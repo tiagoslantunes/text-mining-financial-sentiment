@@ -377,15 +377,15 @@ Static  & Word2Vec Skip-gram            & 200       & In-domain corpus         &
         & GloVe-Twitter-100             & 100       & Twitter (2B tweets)      & Base \\
 \midrule
 Contextual & FinBERT CLS               & 768       & Finance                  & Base (obligatory) \\
-           & SBERT all-mpnet           & 768       & General-purpose          & \textbf{EXTRA (+0.50 pt)} \\
-           & Twitter-RoBERTa CLS       & 768       & Twitter (58M tweets)     & \textbf{EXTRA (+0.50 pt)} \\
+           & SBERT all-mpnet           & 768       & General-purpose          & \textbf{EXTRA} \\
+           & Twitter-RoBERTa CLS       & 768       & Twitter (58M tweets)     & \textbf{EXTRA} \\
 \midrule
 Hand-crafted & Financial features      & 14        & Finance + Twitter surface & Base \\
 \bottomrule
 \end{tabular}
 \caption{Feature representations implemented. Representations marked \textbf{EXTRA} are
 additional Transformer Encoder methods beyond the rubric requirement, each contributing
-+0.50 points to the Feature Engineering extra-work criterion (total: +1.00 pt).}
++0.50 points to the Feature Engineering extra-work criterion.}
 \label{tab:features}
 \end{table}
 
@@ -393,7 +393,7 @@ additional Transformer Encoder methods beyond the rubric requirement, each contr
 
 Both BoW and TF-IDF represent each tweet as a vector with one position per vocabulary word.
 Binary BoW records word presence/absence and serves as an interpretable lower bound.
-TF-IDF improves on this by weighting each word by how distinctive it is across the corpus —
+TF-IDF improves on this by weighting each word by how distinctive it is across the corpus:
 rare financial terms like \textit{downgrade} or \textit{beats} receive high weight while common
 words are suppressed. The unigram+bigram variant adds two-word sequences to capture financial
 expressions such as \textit{price target} or \textit{earnings beat} that vanish at the word
@@ -405,11 +405,11 @@ limitation: they treat words independently, with no notion of order or context.
 \subsection{Static Word Embeddings (Word2Vec and GloVe)}
 
 Word2Vec learns a dense vector per word by training a neural network to predict words from
-their context, so semantically related words end up numerically close — \textit{bullish} and
+their context, so semantically related words end up numerically close : \textit{bullish} and
 \textit{optimistic} become neighbours in the vector space. Skip-gram predicts context from the
 centre word and handles rare financial terms better; CBOW predicts the centre word from context
 and is stronger on frequent vocabulary. Both 200-dimensional models are trained on the 9,543
-in-domain tweets. GloVe-Twitter-100 (Pennington et al., 2014), pre-trained on 2 billion tweets,
+in-domain tweets. GloVe-Twitter-100, pre-trained on 2 billion tweets,
 provides broader coverage of informal Twitter language at the cost of financial specificity.
 Each tweet is represented by mean pooling its token vectors. The key remaining limitation is
 context-insensitivity: the vector for \textit{cut} is identical in \textit{Fed cuts rates} and
@@ -417,26 +417,30 @@ context-insensitivity: the vector for \textit{cut} is identical in \textit{Fed c
 
 \subsection{Contextual Transformer CLS Embeddings}
 
-Transformer encoders solve context-insensitivity by reading the entire sequence at once through
+Transformer encoders solve context-insensitivity by reading the entire sequence through
 self-attention, where each word's representation is shaped by all other words in the tweet.
 A special \texttt{[CLS]} token accumulates this information across all encoder layers, producing
-a 768-dimensional contextualised summary of the tweet (Devlin et al., 2019). Three encoders
-are used in frozen mode — weights not updated — as pure feature extractors.
+a 768-dimensional contextualised summary of the tweet. Three encoders
+are used in frozen mode (weights not updated) as pure feature extractors.
 
 \textbf{FinBERT} (Araci, 2019), fine-tuned on financial news and earnings reports, provides
-direct domain alignment and is the \textbf{obligatory} encoder required by the rubric.
+direct domain alignment for financial vocabulary and sentiment. However, its training corpus
+is formal text, which limits its ability to handle the informal language, abbreviations, and
+noise typical of Twitter.
 
 \textbf{SBERT all-mpnet-base-v2} (Reimers \& Gurevych, 2019) is trained with contrastive
-objectives, producing embeddings well-suited for similarity-based classifiers.
-\textbf{This constitutes Extra Work \#1 under the Feature Engineering criterion (+0.50 pt).}
+objectives, producing embeddings well-suited for similarity-based classifiers — however, it
+has no alignment with either financial text or Twitter language.
+\textbf{This constitutes Extra Work \#1 under the Feature Engineering criterion.}
 
 \textbf{Twitter-RoBERTa} (Barbieri et al., 2020), pre-trained on 58M tweets, handles informal
-language and abbreviated financial commentary in ways general BERT cannot.
-\textbf{This constitutes Extra Work \#2 under the Feature Engineering criterion (+0.50 pt).}
+language, abbreviations, and the noisy writing style typical of Twitter — however, its
+pre-training corpus is general Twitter data, not financial text specifically, so it may miss
+domain-specific vocabulary.
+\textbf{This constitutes Extra Work \#2 under the Feature Engineering criterion.}
 
 PCA projections of the three encoder spaces confirmed that FinBERT (47.1\% variance explained)
-and Twitter-RoBERTa (52.0\%) produce visibly cleaner class separation than SBERT (7.7\%),
-anticipating the downstream performance ranking in Section~5.
+and Twitter-RoBERTa (52.0\%) produce visibly cleaner class separation than SBERT (7.7\%).
 
 \subsection{Financial Hand-crafted Features}
 
@@ -446,7 +450,7 @@ Hutto \& Gilbert, 2014), cashtag, hashtag, mention and URL counts, word and char
 exclamation and question marks, all-caps ratio, and Flesch readability score. A fusion
 experiment concatenating these features with SBERT embeddings (782 dimensions total) yielded
 a marginal gain of +0.0032 F1-macro, suggesting SBERT already captures most surface signal
-implicitly — a useful negative result that informed the final feature-set decision.
+implicitly : a useful negative result that informed the final feature-set decision.
 
 % ── 5. Classification Models ─────────────────────────────────────
 \section{Classification Models}

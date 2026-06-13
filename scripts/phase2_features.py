@@ -1,7 +1,7 @@
-"""Phase 2 part B: preprocessing ablation (fix_text on TF-IDF), fusion features,
-encoder PCA visualisation, SMOTE comparison.
+"""Feature analyses: preprocessing ablation, feature fusion, encoder PCA, SMOTE.
 
-Run: python scripts/phase2_features.py
+Pre-computes results that the notebook loads from cache (results/tables/, results/figures/).
+Run once from project root: python scripts/phase2_features.py
 """
 
 import json
@@ -15,10 +15,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from lightgbm import LGBMClassifier
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 
+# Paths 
 BASE = Path(__file__).resolve().parent.parent
 FIG = BASE / "results" / "figures"
 TAB = BASE / "results" / "tables"
@@ -38,11 +44,10 @@ def fix_tweet(text):
     text = _URL_RE.sub('', text)
     return _TRAIL_RE.sub('', text).strip()
 
-# ============================================================
-# 4.2  Preprocessing ablation: raw vs raw+fix_text (LR + TF-IDF)
-# ============================================================
+
+# 1. Preprocessing ablation: raw vs raw+fix_text (LR + TF-IDF)
 print("=" * 60)
-print("4.2  fix_text ablation com LR + TF-IDF 10k")
+print("1. Preprocessing ablation — raw vs raw+fix_text (LR + TF-IDF 10k)")
 print("=" * 60)
 
 ablation_rows = []
@@ -53,7 +58,7 @@ for name, texts in [("raw", train["text"]),
     scores = cross_val_score(
         LogisticRegression(max_iter=1000, class_weight="balanced"),
         X, y, cv=CV, scoring="f1_macro", n_jobs=-1)
-    print(f"{name}: F1-macro={scores.mean():.4f} +/- {scores.std():.4f}")
+    print(f"  {name}: F1-macro = {scores.mean():.4f} ± {scores.std():.4f}")
     ablation_rows.append({"Config": name, "F1-macro": round(scores.mean(), 4),
                           "Std": round(scores.std(), 4)})
 
@@ -61,51 +66,45 @@ for name, texts in [("raw", train["text"]),
 abl_path = TAB / "preprocessing_ablation.csv"
 if abl_path.exists():
     existing = pd.read_csv(abl_path)
-    print(f"\nTabela existente ({len(existing)} configs):")
+    print(f"\n  Existing table ({len(existing)} configs):")
     print(existing.to_string(index=False))
-    # Add fix_text rows if not present
     config_col = existing.columns[0]
     for row in ablation_rows:
         if row["Config"] not in existing[config_col].values:
             new_row = {c: None for c in existing.columns}
             new_row[config_col] = row["Config"]
-            # find F1 column
             f1_cols = [c for c in existing.columns if "f1" in c.lower() or "F1" in c]
             if f1_cols:
                 new_row[f1_cols[0]] = row["F1-macro"]
             existing = pd.concat([existing, pd.DataFrame([new_row])], ignore_index=True)
     existing.to_csv(abl_path, index=False)
-    print(f"\nTabela actualizada ({len(existing)} configs)")
+    print(f"\n  Updated table ({len(existing)} configs)")
 else:
     pd.DataFrame(ablation_rows).to_csv(abl_path, index=False)
 
-# ============================================================
-# 4.3-A  Fusion: SBERT + financial features
-# ============================================================
+
+# 2. Feature fusion: SBERT + financial hand-crafted features 
 print()
 print("=" * 60)
-print("4.3-A  Fusion SBERT + financial (LightGBM)")
+print("2. Feature fusion — SBERT + financial (LightGBM)")
 print("=" * 60)
-
-from lightgbm import LGBMClassifier
-from sklearn.preprocessing import StandardScaler
 
 X_sbert = np.load(PROC / "X_sbert_train.npy")
 X_fin = np.load(PROC / "X_fin_train.npy")
 scaler = StandardScaler()
 X_fin_scaled = scaler.fit_transform(X_fin)
 X_fusion = np.hstack([X_sbert, X_fin_scaled])
-print(f"Fusion shape: {X_fusion.shape}")
+print(f"  Fusion shape: {X_fusion.shape}")
 
 best_params = json.loads((TAB / "optuna_best_params.json").read_text())["best_params"]
 lgbm = LGBMClassifier(**best_params, class_weight="balanced", random_state=42, n_jobs=-1, verbose=-1)
 t0 = time.time()
 scores_fusion = cross_val_score(lgbm, X_fusion, y, cv=CV, scoring="f1_macro")
-print(f"LightGBM (SBERT+financial fusion): F1={scores_fusion.mean():.4f} +/- {scores_fusion.std():.4f} ({time.time()-t0:.0f}s)")
+print(f"  SBERT + financial fusion: F1 = {scores_fusion.mean():.4f} ± {scores_fusion.std():.4f} ({time.time()-t0:.0f}s)")
 
 lgbm2 = LGBMClassifier(**best_params, class_weight="balanced", random_state=42, n_jobs=-1, verbose=-1)
 scores_sbert = cross_val_score(lgbm2, X_sbert, y, cv=CV, scoring="f1_macro")
-print(f"LightGBM (SBERT only):             F1={scores_sbert.mean():.4f} +/- {scores_sbert.std():.4f}")
+print(f"  SBERT only:               F1 = {scores_sbert.mean():.4f} ± {scores_sbert.std():.4f}")
 
 fusion_result = {
     "sbert_only_f1": round(float(scores_sbert.mean()), 4),
@@ -113,17 +112,14 @@ fusion_result = {
     "gain": round(float(scores_fusion.mean() - scores_sbert.mean()), 4),
 }
 (TAB / "fusion_features_result.json").write_text(json.dumps(fusion_result, indent=2))
-print(f"Fusion gain: {fusion_result['gain']:+.4f}")
+print(f"  Fusion gain: {fusion_result['gain']:+.4f}")
 
-# ============================================================
-# 4.3-B  PCA 2D of the three frozen encoders
-# ============================================================
+
+# 3. PCA 2D of the three frozen encoders
 print()
 print("=" * 60)
-print("4.3-B  Encoder PCA 2D")
+print("3. Encoder PCA 2D")
 print("=" * 60)
-
-from sklearn.decomposition import PCA
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
 for ax, (name, fname) in zip(axes, [
@@ -143,18 +139,14 @@ plt.tight_layout()
 plt.savefig(FIG / "encoder_pca.pdf", dpi=300, bbox_inches="tight")
 plt.savefig(FIG / "encoder_pca.png", dpi=150, bbox_inches="tight")
 plt.close()
-print("Saved encoder_pca.{pdf,png}")
+print("  Saved → encoder_pca.{pdf,png}")
 
-# ============================================================
-# 4.4  SMOTE vs class_weight (LightGBM + SBERT)
-# ============================================================
+
+# 4. SMOTE vs class_weight (LightGBM + SBERT)
 print()
 print("=" * 60)
-print("4.4  SMOTE vs class_weight")
+print("4. Class imbalance — SMOTE vs class_weight")
 print("=" * 60)
-
-from imblearn.over_sampling import SMOTE
-from imblearn.pipeline import Pipeline as ImbPipeline
 
 lgbm_cw = LGBMClassifier(**best_params, class_weight="balanced", random_state=42, n_jobs=-1, verbose=-1)
 f1_cw = cross_val_score(lgbm_cw, X_sbert, y, cv=CV, scoring="f1_macro").mean()
@@ -165,8 +157,8 @@ smote_pipe = ImbPipeline([
 ])
 f1_smote = cross_val_score(smote_pipe, X_sbert, y, cv=CV, scoring="f1_macro").mean()
 
-print(f"LightGBM SBERT + class_weight: {f1_cw:.4f}")
-print(f"LightGBM SBERT + SMOTE:        {f1_smote:.4f}")
+print(f"  class_weight='balanced' : F1 = {f1_cw:.4f}")
+print(f"  SMOTE (applied in-fold) : F1 = {f1_smote:.4f}")
 smote_result = {
     "class_weight_f1": round(float(f1_cw), 4),
     "smote_f1": round(float(f1_smote), 4),
@@ -174,11 +166,12 @@ smote_result = {
     "conclusion": "SMOTE melhor" if f1_smote > f1_cw + 0.005 else "class_weight suficiente (SMOTE descartado)",
 }
 (TAB / "smote_comparison.json").write_text(json.dumps(smote_result, indent=2))
-print(f"Conclusao: {smote_result['conclusion']}")
+print(f"  Conclusion: {smote_result['conclusion']}")
 
-# Checkpoint
+
+# Checkpoint 
 cp = BASE / "results" / "progress_checkpoint.json"
 state = json.loads(cp.read_text()) if cp.exists() else {}
 state["phase_2_features"] = {"done": True, "timestamp": time.time(), **fusion_result, **smote_result}
 cp.write_text(json.dumps(state, indent=2))
-print("\nCheckpoint phase_2_features guardado.")
+print("\nCheckpoint saved → progress_checkpoint.json")
