@@ -60,7 +60,7 @@ def clean_twitter_noise(text: str) -> str:
     """
     text = re.sub(r"https?://\S+|www\.\S+", " URL ", text)
     text = re.sub(r"@\w+", " USER ", text)
-    text = re.sub(r"\$([A-Z]{1,5})\b", r" TICKER_\1 ", text)
+    text = re.sub(r"\$([A-Za-z]{1,5})\b", lambda m: f" TICKER_{m.group(1).upper()} ",text)
     text = re.sub(r"#(\w+)", r" \1 ", text)
     text = re.sub(r"&amp;|&lt;|&gt;", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -68,7 +68,15 @@ def clean_twitter_noise(text: str) -> str:
 
 
 def normalize_text(text: str) -> str:
-    """NFKD Unicode normalization + ASCII conversion + lowercase."""
+    """NFKD Unicode normalization + ASCII conversion + lowercase.
+    Contractions are expanded before stripping apostrophes to preserve negations.
+    """
+    text = text.replace("’", "'").replace("‘", "'")
+
+    text = re.sub(r"won't", "will not", text, flags=re.IGNORECASE)
+    text = re.sub(r"can't", "can not", text, flags=re.IGNORECASE)
+    text = re.sub(r"n't", " not", text, flags=re.IGNORECASE)
+
     text = unicodedata.normalize("NFKD", text)
     text = text.encode("ascii", "ignore").decode("ascii")
     return text.lower()
@@ -84,9 +92,18 @@ def lemmatize_tokens(tokens: list) -> list:
     return [lemmatizer.lemmatize(t) for t in tokens]
 
 
+_STRUCTURED_PREFIXES = ("ticker_", "url", "user")
+
 def stem_tokens(tokens: list) -> list:
-    """SnowballStemmer — same as professor's Lab 1 implementation."""
-    return [stemmer_snow.stem(t) for t in tokens]
+    """SnowballStemmer — same as professor's Lab 1 implementation.
+
+    Structured tokens introduced by clean_twitter_noise (ticker_*, url, user)
+    are passed through unchanged so the stemmer cannot corrupt them.
+    """
+    return [
+        t if t.startswith(_STRUCTURED_PREFIXES) else stemmer_snow.stem(t)
+        for t in tokens
+    ]
 
 
 def tokenize_tweet(text: str) -> list:
