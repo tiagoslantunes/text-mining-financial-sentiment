@@ -1,12 +1,15 @@
-"""Enhanced 5-fold transformer fine-tuning script.
+"""Transformer fine-tuning with stratified k-fold cross-validation.
 
-Key improvements over v1:
+The number of folds is configurable via --n-folds (default 5); every model used
+in the submission is trained at 10 folds (see scripts/run_all_10fold.ps1).
+
+Features:
 - Best-checkpoint saving per fold (val F1, not last epoch)
 - Label smoothing
 - Cosine warmup schedule
 - Layer-wise learning rate decay (LLRD)
 - Gradient accumulation
-- fp16 instead of bf16 (avoids NaN with DeBERTa)
+- fp16 with GradScaler (avoids NaN with DeBERTa)
 """
 
 from __future__ import annotations
