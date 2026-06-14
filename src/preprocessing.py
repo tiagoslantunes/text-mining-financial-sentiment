@@ -1,7 +1,5 @@
-"""Text preprocessing pipeline for financial tweet classification.
-
-All techniques follow the professor's canonical implementation from Lab 1
-(SnowballStemmer, WordNetLemmatizer) and Lab Extra (TweetTokenizer for tweets).
+"""
+Text preprocessing pipeline for financial tweet classification
 """
 
 import re
@@ -88,14 +86,14 @@ def remove_stopwords(tokens: list) -> list:
 
 
 def lemmatize_tokens(tokens: list) -> list:
-    """WordNetLemmatizer — same as professor's Lab 1 implementation."""
+    """WordNetLemmatizer"""
     return [lemmatizer.lemmatize(t) for t in tokens]
 
 
 _STRUCTURED_PREFIXES = ("ticker_", "url", "user")
 
 def stem_tokens(tokens: list) -> list:
-    """SnowballStemmer — same as professor's Lab 1 implementation.
+    """SnowballStemmer
 
     Structured tokens introduced by clean_twitter_noise (ticker_*, url, user)
     are passed through unchanged so the stemmer cannot corrupt them.
@@ -116,7 +114,7 @@ def full_pipeline(
     use_lemmatize: bool = True,
     use_stem: bool = False,
 ) -> str:
-    """Full preprocessing pipeline: clean → normalize → tokenize → filter → reduce.
+    """Full preprocessing pipeline: clean -> normalize -> tokenize -> filter -> reduce.
 
     Args:
         text: Raw tweet string.
