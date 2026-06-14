@@ -1,0 +1,3 @@
+Model,F1-macro,Accuracy
+Stacking (LR meta) | 5 base learners,0.9168,0.9328
+Soft-Average | 5 base learners,0.9144,

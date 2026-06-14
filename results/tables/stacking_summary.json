@@ -1,0 +1,11 @@
+{
+  "base_learners": [
+    "finbert_fintwitter_10ep_fixtext",
+    "finbert_fintwitter_7ep",
+    "roberta_large_ts_v2",
+    "debertav3_large_6ep",
+    "deberta_base_finance_fixtext"
+  ],
+  "stacking_f1": 0.9168385285493269,
+  "soft_average_f1": 0.9143999427252911
+}
