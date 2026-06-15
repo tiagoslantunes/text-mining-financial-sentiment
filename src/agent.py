@@ -3,15 +3,15 @@
 Extra Challenge 2 (+1.50 pts): a conversational agent that orchestrates THREE
 classifiers with NON-TRIVIAL, adaptive routing (not simple voting):
 
-    Tweet -> VADER (quick lexical baseline, ~0.1 ms)
+    Tweet -> VADER (quick lexical baseline)
               |- strong signal (|compound| > tau)  -> trust VADER
-              |- weak signal -> LightGBM + SBERT (~15 ms)
+              |- weak signal -> LightGBM + SBERT
                                  |- agrees with VADER -> final verdict
                                  |- disagrees        -> FinBERT-fintwitter
-                                                        (domain expert, ~150 ms)
+                                                        (domain expert)
 
 The routing threshold tau is CALIBRATED on data (see notebook 08): we sweep tau
-and pick the operating point that maximises accuracy while minimising expensive
+and pick the operating point that maximises F1-macro while minimising expensive
 expert calls. The domain-expert tool is the SAME backbone our submitted model
 fine-tunes (nickmuchi/finbert-tone-finetuned-fintwitter-classification), used
 zero-shot here, which ties the agent to the rest of the project.
@@ -180,8 +180,8 @@ class RuleBasedAgent:
     ----------
     strong : float
         |VADER compound| above which the lexical signal is trusted directly.
-        Default 0.50 was CALIBRATED on a labelled sample (see notebook 08);
-        the historical default 0.30 can be passed for comparison.
+        The value used in the notebook is calibrated on a held-out sample; the constructor default below is only a fallback
+        when no calibrated value is supplied.
     """
 
     def __init__(self, strong: float = 0.50, verbose: bool = False):
@@ -307,7 +307,7 @@ class RuleBasedAgent:
         return self._format(self.route(message))
 
 
-# Backward-compatible alias (notebook 08 imports MockAgent)
+
 MockAgent = RuleBasedAgent
 
 
