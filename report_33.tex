@@ -999,22 +999,28 @@ is deterministic, and is reproducible for the oral defence without any API key.
 
 % ── 8. Conclusion ────────────────────────────────────────────────
 \section{Conclusion}
-This work delivers a complete NLP pipeline for financial tweet sentiment classification. Our
-\textbf{submitted single-model solution} - one FinBERT encoder trained by \textbf{knowledge
-distillation} from an eight-encoder ensemble teacher - achieves an out-of-fold macro-F1 of
-\textbf{\distf} (accuracy \distacc), a \textbf{+0.112} gain over the 0.8021 classical baseline,
-while remaining a single 110M-parameter classifier. Key contributions: (1) a text-quality audit
-showing the corpus is corrupted at source, and a repair step (\texttt{ftfy} fix\_text) worth
-+0.26pp at transformer level - whereas \emph{destructive} preprocessing consistently hurts;
-(2) systematic evaluation of 11 feature representations and 12 model families under a common
-seeded protocol; (3) a nine-configuration transformer backbone search showing that
-\emph{domain-matched pre-training beats parameter count} (110M FinBERT $>$ 435M DeBERTa-v3-large
-by $\sim$2pp); (4, extra) a weighted soft-vote ensemble (0.9201) whose gain is statistically
-significant, compressed into the submitted student with 44\% of the gain retained; (5, extra) a
-fine-tuned GPT-2 \emph{decoder} classifier (0.7724) with the finding that few-shot prompting of a
-small decoder collapses to the majority class; (6, extra) an explainable, reproducible agentic
-workflow. Future work could explore label-noise auditing of the Neutral boundary, domain-adaptive
-pre-training on a larger financial-tweet corpus, and QLoRA fine-tuning of decoder LLMs.
+
+This work explored the full NLP pipeline for three-class financial tweet sentiment
+classification, covering 11 feature representations, 12 model families, and a range of
+extra contributions including ensemble learning, knowledge distillation~\cite{hinton2015distilling},
+a GPT-2 decoder classifier, and an agentic routing workflow. The submitted ensemble of
+eight fine-tuned encoders achieves an out-of-fold macro-F1 of \textbf{\ensF}
+(accuracy \ensAcc), with all gains over the classical ML ceiling (0.8021) confirmed
+statistically significant by paired bootstrap. The standout methodological finding is that
+\emph{domain-aligned pre-training outweighs raw parameter count}: the 110\,M FinBERT-fintwitter
+encoder consistently outperforms the 435\,M DeBERTa-v3-large by $\sim$2\,pp, while a
+lightweight text-repair step (\texttt{ftfy}~\cite{speer2019}) contributes a free
+\textbf{+0.26\,pp} at transformer level. Knowledge distillation compresses the ensemble
+into a single deployable model at OOF macro-F1 = \textbf{\kdF}, retaining 48\,\% of
+the ensemble gain.
+
+Residual errors (9.1\,\%) are concentrated at the Neutral\,$\leftrightarrow$\,Bearish
+boundary, driven by implicit and hedged financial language rather than model capacity;
+an estimated 0.48\,\% of the corpus carries conflicting annotations that set a hard
+ceiling on achievable performance. Future work should address label-noise auditing of
+the Neutral boundary, domain-adaptive pre-training on larger financial Twitter
+corpora~\cite{loureiro2022}, and parameter-efficient fine-tuning of generative decoder
+architectures~\cite{brown2020} as a lower-cost alternative to full encoder fine-tuning.
 
 
 
