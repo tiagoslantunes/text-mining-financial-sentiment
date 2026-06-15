@@ -1,26 +1,24 @@
 \documentclass[11pt,a4paper]{article}
-
+ 
 % ── Page layout ───────────────────────────────────────
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{setspace}
 \setstretch{1.15}
-
+ 
 % ── Encoding & language ───────────────────────────────
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
-\usepackage{microtype}
-
+\usepackage[expansion=false]{microtype}
+ 
 % ── Font: Helvetica ───────────────────────────────────
-\usepackage[scaled=0.95]{helvet}
-\renewcommand{\familydefault}{\sfdefault}
-
+ 
 % ── Colour palette ────────────────────────────────────
 \usepackage[table,xcdraw]{xcolor}
 \definecolor{maincolor}{RGB}{100,155,0}
 \definecolor{darkgray}{RGB}{60,60,60}
 \definecolor{lightgray}{RGB}{245,245,245}
-
+ 
 % ── Headers / footers ─────────────────────────────────
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -30,7 +28,7 @@
 \fancyfoot[C]{\footnotesize\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
-
+ 
 % ── Section styling ───────────────────────────────────
 \usepackage{titlesec}
 \titleformat{\section}
@@ -39,30 +37,30 @@
   {\color{maincolor}}{\thesubsection}{0.8em}{}
 \titleformat{\subsubsection}
   {\bfseries\color{darkgray}}{\thesubsubsection}{0.8em}{}
-
+ 
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 \titlespacing*{\subsection}{0pt}{6pt}{3pt}
 \titlespacing*{\subsubsection}{0pt}{4pt}{2pt}
-
+ 
 % ── Math ───────────────────────────────────────────────
 \usepackage{amsmath, amssymb}
-
+ 
 % ── Graphics / floats ─────────────────────────────────
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{placeins}
-\graphicspath{{results/figures/}}
-
+\graphicspath{{results/figures/}{./}}
+ 
 % ── Tables ────────────────────────────────────────────
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{colortbl}
-
+ 
 \newcommand{\tH}[1]{\textcolor{maincolor}{\textbf{#1}}}
 \newcommand{\gmid}{\arrayrulecolor{maincolor}\midrule\arrayrulecolor{black}}
-
+ 
 % ── Captions ──────────────────────────────────────────
 \usepackage{caption}
 \captionsetup{
@@ -70,7 +68,7 @@
   labelfont={bf,color=maincolor},
   skip=4pt
 }
-
+ 
 % ── Lists ─────────────────────────────────────────────
 \usepackage{enumitem}
 \setlist[itemize]{
@@ -81,11 +79,11 @@
   leftmargin=1.4em,
   label=\textcolor{maincolor}{\textbullet}
 }
-
+ 
 % ── Paragraph spacing ─────────────────────────────────
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{3pt}
-
+ 
 % ── Hyperlinks ────────────────────────────────────────
 \usepackage[
   colorlinks=true,
@@ -94,520 +92,875 @@
   urlcolor=maincolor,
   pdfborder={0 0 0}
 ]{hyperref}
-
+ 
 % ── Convenience ───────────────────────────────────────
 \newcommand{\ttt}[1]{\texttt{\hyphenchar\font=`\-\relax #1}}
-
-% ── Submitted (distilled) model metrics — single source of truth ──
-\newcommand{\distf}{0.9139}    % OOF macro-F1 of the distilled student (12 epochs)
-\newcommand{\distacc}{0.9334}  % OOF accuracy of the distilled student
-
+ 
+% ── Model metrics — single source of truth ─────────────────────────
+\newcommand{\ensF}{0.9201}    % OOF macro-F1 of the final ensemble (submitted)
+\newcommand{\ensAcc}{0.9357}  % OOF accuracy of the final ensemble
+\newcommand{\kdF}{0.9139}     % OOF macro-F1 of distilled student (extra work)
+\newcommand{\kdAcc}{0.9334}   % OOF accuracy of distilled student (extra work)
+\newcommand{\distf}{\ensF}    % legacy alias
+\newcommand{\distacc}{\ensAcc}% legacy alias
+ 
 \begin{document}
-
+ 
 % ── Typesetting tolerance: absorb long monospace tokens, avoid margin overflow ──
 \tolerance=2000
 \emergencystretch=3em
 \hfuzz=1pt
-
-% ── Title block ──────────────────────────────────────────────────
+ 
+% ── Front matter: roman page numbering (cover = i, hidden) ───────
+\pagenumbering{roman}
+ 
+ 
+% ── Cover page ───────────────────────────────────────────────────
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+\setlength{\parskip}{0pt}
+ 
+\vspace*{0.5cm}
+ 
+% NOVA IMS logo
+\includegraphics[width=0.42\linewidth]{logo-nova.png}
+ 
+\vspace{1cm}
+ 
+% Top rule
+{\color{maincolor}\rule{\linewidth}{1.5pt}}\\[2pt]
+{\color{maincolor}\rule{\linewidth}{0.5pt}}
+ 
+\vspace{1.4cm}
+ 
+{\normalsize\color{darkgray}\scshape Text Mining}\\[4pt]
+{\normalsize\color{darkgray} MSc in Data Science and Advanced Analytics}\\[2pt]
+ 
+\vfill
+ 
+{\Huge\bfseries\color{maincolor} Financial Tweet\\[6pt] Sentiment Classification\par}
+ 
+\vspace{0.8cm}
+ 
+{\large\color{darkgray} Multiclass Sentiment Analysis of\\[2pt] Financial Social Media Text\par}
+ 
+\vfill
+ 
+% Authors block
+{\large\bfseries\color{darkgray} Group 33}\\[14pt]
+{\normalsize
+\begin{tabular}{ll}
+Alexandra Varela    & 20250514 \\[3pt]
+Francisca Fernandes & 20250406 \\[3pt]
+Mariana Melo        & 20250414 \\[3pt]
+Tiago Antunes       & 20250357 \\
+\end{tabular}}
+ 
+\vfill
+ 
+{\normalsize\color{darkgray} Academic Year 2025/2026}\\[3pt]
+{\normalsize\color{darkgray} June 2026}
+ 
+\vspace{1cm}
+ 
+% Bottom rule
+{\color{maincolor}\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{maincolor}\rule{\linewidth}{1.5pt}}
+ 
+\end{titlepage}
+ 
+ 
+% ── Table of contents ────────────────────────────────────────────
 \thispagestyle{fancy}
-\begin{center}
-  {\LARGE\bfseries\color{maincolor} Financial Tweet Sentiment Classification}\\[3pt]
-  {\large\color{darkgray} Multiclass Sentiment Analysis of Financial Social Media Text}\\[8pt]
-  {\normalsize Text Mining --- MSc in Data Science and Advanced Analytics}\\[1pt]
-  {\normalsize NOVA Information Management School (NOVA IMS)}\\[5pt]
-  {\normalsize \textbf{Group 33} \quad$\cdot$\quad Academic Year 2025/2026 \quad$\cdot$\quad June 2026}
-\end{center}
-\vspace{2pt}
-{\color{maincolor}\rule{\linewidth}{0.6pt}}
+{\color{maincolor}\Large\bfseries Contents}
 \vspace{4pt}
-
-% ── Abstract ─────────────────────────────────────────────────────
-\section*{Abstract}
-This report presents a multiclass sentiment classification system for financial tweets,
-distinguishing three market stances: Bearish (0), Bullish (1), and Neutral (2). The dataset
-comprises 9{,}543 labelled training tweets with pronounced class imbalance (Neutral 64.7\%,
-Bullish 20.1\%, Bearish 15.1\%; imbalance ratio 4.28:1) and substantial text corruption: 7.0\% of
-tweets carry UTF-8 mojibake and 16.4\% end in truncation artefacts. We systematically evaluate
-seven text preprocessing techniques, eleven feature representations --- spanning sparse TF--IDF,
-Word2Vec, GloVe--Twitter, FinBERT, SBERT and Twitter--RoBERTa embeddings --- and twelve model
-families under a common stratified cross-validation protocol (10-fold for all transformer
-fine-tuning, seed 42). Frozen-embedding classifiers tuned with Optuna plateau around macro-F1 0.80.
-A \textbf{transformer backbone search} over nine fine-tuned encoders shows that domain-matched
-pre-training dominates model size: a 110M-parameter \textbf{FinBERT} variant pre-adapted to
-financial Twitter text reaches an out-of-fold macro-F1 of \textbf{0.9082}, beating DeBERTa-v3-large
-(435M, 0.8889). As extra work, a weighted soft-vote \textbf{ensemble} of eight encoders --- with
-weights found by exhaustive out-of-fold grid search --- attains \textbf{0.9201}, a statistically
-significant gain over the best individual model (bootstrap 95\% CI of the difference:
-$[+0.007, +0.017]$). To comply with the single-model delivery rule, we \textbf{distil} this
-ensemble into one FinBERT student (Hinton et al., 2015), our \textbf{submitted single-model
-solution} at OOF macro-F1 \textbf{\distf}. We additionally show that a fine-tuned \textbf{GPT-2
-decoder} classifies at macro-F1 0.7724 (whereas few-shot prompting collapses to the majority
-class), and that an offline \textbf{agentic workflow} adaptively routes tweets between VADER,
-LightGBM/SBERT and FinBERT with conversational explanations.
-
-\vspace{2pt}
-{\footnotesize\tH{Keywords:}~ Financial sentiment analysis, tweet classification, FinBERT
-fine-tuning, model selection, ensemble distillation, decoder classification, LangChain agent.}
+ 
+{\color{maincolor}\rule{\linewidth}{0.6pt}}
+\vspace{6pt}
+ 
+\renewcommand{\contentsname}{}
+\setcounter{tocdepth}{2}
+\tableofcontents
+ 
+\clearpage
+ 
+% ── Main matter: arabic numbering restarts at 1 ──────────────────
+\pagenumbering{arabic}
 
 % ── 1. Introduction ──────────────────────────────────────────────
 \section{Introduction}
-Social media platforms --- particularly Twitter/X --- have become a primary channel through which
+Social media platforms, like Twitter/X, have become a primary channel through which
 retail and institutional investors express and discover market sentiment. Automated classification
 of financial tweets into Bearish, Bullish and Neutral stances enables real-time signal generation
-for algorithmic trading, risk monitoring and investor-sentiment tracking (Bollen et al., 2011;
-Antweiler \& Frank, 2004).
+for algorithmic trading, risk monitoring and investor-sentiment tracking (\cite{antweiler2004talk} \cite{bollen2011twitter} ).
 
-This work addresses multiclass financial sentiment classification --- a text-categorization
-problem in the classical sense of Sebastiani (2002) --- under significant class imbalance
-(ratio 4.28:1). We explore the full NLP pipeline --- from raw text through feature engineering to
-model selection and hyperparameter tuning --- following the Text Mining curriculum at NOVA IMS. All
-models are trained \emph{only} on the provided training corpus. The remainder of the report is
+This work addresses multiclass financial sentiment classification - a text-categorization
+problem. We explore the full NLP pipeline, from raw text through feature engineering to
+model selection and hyperparameter tuning. All
+models are trained on the provided training corpus. The remainder of the report is
 organised as follows: Section~2 explores the dataset; Section~3 analyses preprocessing; Section~4
-describes feature engineering; Section~5 presents the classification models, including the backbone
-search and the fine-tuned encoder/decoder; Section~6 reports results and error analysis; Section~7
-details the agentic workflow (Extra Challenge~2); Section~8 concludes.
-
-\textbf{Course alignment.} Every stage follows the Text Mining curriculum: the NLP pipeline and
-text preprocessing (Lecture~1, Lab~1); n-grams, TF--IDF and distance metrics (Lecture~2-Extra);
-word2vec word embeddings and their semantic geometry (Lecture~2, Lab~2); attention and Transformer
-\emph{encoders} (Lecture~4, Lab~4); and \emph{decoder} LLMs, encoder-based classification and
-\emph{Agentic AI} (Lecture~6, Lab~5; Alammar \& Grootendorst, 2024).
+describes feature engineering; Section~5 presents the classification models; Section~6 reports results and analysis; Section~7
+details the agentic workflow; Section~8 concludes.
 
 % ── 2. Data Exploration ──────────────────────────────────────────
+% -- 2. Data Exploration ----------------------------------------------------
 \section{Data Exploration}
-The dataset consists of 9{,}543 labelled training tweets and 2{,}388 unlabelled test tweets from
-financial Twitter discourse. Each tweet references one or more publicly-listed securities and
-expresses a market stance.
+
+The training set contains 9{,}543 labelled tweets across three sentiment classes (Bearish,
+Bullish, Neutral) and 299 unlabelled test tweets. A quality gate confirmed no missing
+values, no exact duplicates and no exact train/test overlap, so no imputation or
+deduplication was required.
 
 \subsection{Class Distribution}
-Figure~\ref{fig:classdist} illustrates the severe class imbalance. Neutral tweets dominate (64.7\%),
-consistent with most financial discourse being non-directional. Bearish tweets (15.1\%) are less
-frequent than Bullish (20.1\%), reflecting a structural optimism bias in financial social media
-(Antweiler \& Frank, 2004). To address imbalance, all models use \texttt{class\_weight='balanced'}
-(or an inverse-frequency-weighted loss) and evaluation relies on \textbf{macro-F1} as the primary
-metric, which weights all three classes equally regardless of support.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.95\linewidth]{report_class_dist.png}
-  \caption{Class distribution of the training set: absolute counts (left) and proportions (right).}
-  \label{fig:classdist}
-\end{figure}
+Neutral dominates at 64.7\%, Bullish at 20.2\% and Bearish at only 15.1\%
+(Figure~\ref{fig:classdist}), yielding a Neutral-to-Bearish ratio of 4.28:1. This
+imbalance has three direct methodological consequences: macro-averaged F1 is adopted as
+the primary metric, class-weighted objectives are used for all classifiers and all
+cross-validation folds are stratified to preserve the original class proportions.
 
-\subsection{Linguistic Characteristics}
-Tweets have a mean length of 12.2 words (maximum 32), consistent with Twitter's character limit. Key
-Twitter-specific features include cashtags (\$AAPL, \$TSLA), hashtags (\#earnings, \#bearish),
-mentions (@analyst) and URLs. Bullish tweets contain more cashtags on average (0.34 vs.\ 0.22 for
-Bearish), suggesting that positive sentiment correlates with specific stock discussion. The most
-discriminative terms per class are: \textbf{Bearish} --- `down', `miss', `cut', `bearish';
-\textbf{Bullish} --- `beats', `strong', `upgraded', `buy'; \textbf{Neutral} --- `flat',
-`unchanged', `stable'. Per-class word clouds are included in the accompanying notebook.
+\subsection{Tweet Length Analysis}
 
-\subsection{Text-Quality Audit: Mojibake and Truncation}
-A character-level audit reveals that the corpus is \emph{corrupted at source}: 7.0\% of training
-tweets contain UTF-8 mojibake (byte sequences decoded with the wrong codec, e.g.\
-\texttt{\detokenize{â€™}} instead of an apostrophe), 16.4\% end in truncation artefacts
-(\texttt{...}/replacement characters cutting the sentence mid-token), and 46.8\% carry URLs with no
-sentiment value. In total, 50.1\% of tweets are altered by our repair step. Corruption is not
-uniform across classes (Neutral 8.7\%, Bearish 5.5\%, Bullish 2.9\%), so leaving it unfixed injects
-class-correlated noise. This finding motivates the \texttt{fix\_text} preprocessing technique
-(Section~3.1) based on the \texttt{ftfy} library (Speer, 2019). A complementary duplicate audit
-finds \emph{zero} exact duplicates in the training set; after normalisation, 2.1\% of tweets are
-near-duplicates (URL/encoding variants of the same post), of which three groups carry
-\emph{conflicting labels} --- direct evidence of annotation noise --- and 42 test tweets have a
-near-identical training counterpart (a property of the provided split). No rows are dropped.
-Finally, a cashtag ablation (15.0\% of tweets contain \$AAPL-style tags) shows that ticker
-\emph{identity} carries no sentiment signal: keeping cashtags, collapsing them to a generic token,
-or removing them entirely all score within one standard deviation (0.7149--0.7161, leak-free
-protocol). Mapping tickers to company names was therefore rejected --- it would re-introduce
-identity as rare tokens with no expected gain and, for the transformer, shift inputs away from the
-pre-training distribution of FinBERT-fintwitter, which contains native cashtags. Finally, \emph{adversarial validation} --- a classifier trained to distinguish training
-from test tweets --- yields AUC 0.486 ($\approx$0.5), and all surface statistics match across the
-two sets: the test set is statistically indistinguishable from training, so our out-of-fold
-estimates are a reliable proxy for test performance.
+All three classes share nearly identical length distributions, with a mean of approximately
+12 words, a median of 11 and a corpus maximum of 32 (Figure~\ref{fig:lengthdist}). Length
+is therefore not a discriminating feature and is not added as an auxiliary input. A
+Kolmogorov--Smirnov test on character length and word count finds no statistically
+significant difference between training and test distributions ($p = 0.30$ and
+$p = 0.45$, respectively; Figure~\ref{fig:distribshift}), and adversarial validation
+yields AUC = 0.486, confirming the absence of distributional shift and validating
+cross-validation estimates as reliable proxies for held-out test performance.
 
-\subsection{Lexicon Limits: VADER by Class}
-Scoring every tweet with VADER (Hutto \& Gilbert, 2014) exposes why general-purpose lexicons fail
-on financial text: among \emph{Neutral} tweets, 32.2\% have a positive VADER compound and 18.4\% a
-negative one --- over half of the majority class looks polarised to a lexicon. Financial wording
-(``raised'', ``beats'', ``cut'', ``misses'') is factual news vocabulary, not opinion. This
-quantifies the need for domain-specific models (FinBERT) over lexicon or generic baselines, and is
-revisited by the agentic workflow in Section~7, which only trusts VADER when its signal is strong.
+\subsection{Financial Twitter Structural Features}
 
-\subsection{EDA-to-Modelling Decisions}
-The exploratory analysis is not only descriptive; it directly determines the modelling choices.
-\begin{table}[H]
-  \centering
-  \scriptsize
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}
-                                >{\raggedright\arraybackslash}p{0.33\linewidth}
-                                >{\raggedright\arraybackslash}X@{}}
-    \toprule
-    \tH{Finding} & \tH{Evidence} & \tH{Modelling consequence} \\
-    \gmid
-    Severe class imbalance & Neutral 64.7\%, Bullish 20.1\%, Bearish 15.1\% &
-    Stratified folds, class-weighted losses and macro-F1 as the primary metric. \\
-    Short, information-dense tweets & Mean 12.2 words, maximum 32 words &
-    Transformer max length 128 covers the corpus (max 33 words) with subword headroom. \\
-    Financial tokens carry sentiment & Cashtags, analyst actions, earnings and target-price terms &
-    Raw text is preserved for the final transformer; aggressive cleaning is tested but not assumed. \\
-    URL/mention boilerplate is common & URLs appear in 46.8\% of the tweets &
-    Regex cleaning is evaluated for sparse baselines, while tweet-specialised tokenizers handle raw text. \\
-    Corpus is corrupted at source & 7.0\% mojibake, 16.4\% truncation artefacts, class-correlated &
-    New \texttt{fix\_text} repair step (ftfy + artefact/URL cleanup), ablated for sparse models and transformers. \\
-    Lexicons mis-read financial news & 50.6\% of Neutral tweets look polarised to VADER &
-    Domain-matched encoders (FinBERT) prioritised in the backbone search; VADER demoted to agent baseline. \\
-    \bottomrule
-  \end{tabularx}
-  \caption{How EDA findings are translated into concrete modelling choices.}
-  \label{tab:eda_decisions}
-\end{table}
+Bullish tweets carry the highest cashtag density (mean 0.34 per tweet), followed by
+Bearish (0.22), while Neutral lags notably behind (0.17), consistent with directional
+analyst commentary targeting specific stocks (Figure~\ref{fig:structural}). URLs appear
+in roughly 47\% of tweets across all classes and function primarily as structural metadata
+rather than sentiment signals.
+
+\subsection{Cashtag and Hashtag Frequency Analysis}
+
+The corpus spans a broad range of US equities, with energy, technology and banking sectors
+dominating cashtag mentions and following a long-tailed frequency distribution
+(Figure~\ref{fig:cashtagfreq}).
+
+\subsection{Cashtag Sentiment Breakdown}
+
+For most tickers, one sentiment class dominates (Figure~\ref{fig:cashtagsentiment}),
+though large-cap names show a more balanced split depending on surrounding analyst
+language. A cashtag identity ablation comparing intact cashtags, a generic
+\texttt{TICKER} token and full cashtag removal finds macro-F1 within one standard
+deviation across all three configurations (0.7149 to 0.7161): ticker identity carries no
+sentiment signal for sparse models. Raw cashtags are nonetheless retained for transformer
+models to remain within their pre-training distribution.
+
+\subsection{Vocabulary Analysis and Discriminative Terms}
+
+Word clouds (Figure~\ref{fig:wordclouds}) confirm the expected signal: Bearish is
+dominated by downgrade language (\textit{cut}, \textit{drop}, \textit{miss}); Bullish by
+positive analyst actions (\textit{raised}, \textit{beats}, \textit{growth}); Neutral by
+reporting verbs (\textit{announces}, \textit{reports}) without directional framing.
+Bigram and trigram analysis (Figure~\ref{fig:ngrams}) reveals that phrase-level patterns
+carry cleaner signal than unigrams: Bearish includes \textit{price target cut} and
+\textit{reiterate sell}; Bullish mirrors with \textit{price target raised} and
+\textit{beats estimates}. Both classes share the same syntactic template but with opposite
+polarity, so a model that fails to capture directionality will systematically confuse
+them. Mean TF-IDF scores (Figure~\ref{fig:tfidf}) confirm clean term-level separation,
+with Bearish associated with \textit{misses}, \textit{lower}, \textit{cut},
+\textit{china} and \textit{coronavirus}; Bullish with \textit{beats}, \textit{target},
+\textit{price target} and \textit{revenue}; and Neutral with \textit{results},
+\textit{dividend}, \textit{reports} and \textit{declares}. A Venn diagram analysis
+(Figure~\ref{fig:venn}), however, shows that roughly half of the top vocabulary is shared
+across all three classes: the hard cases are not unknown words but the same words used in
+opposite contexts (e.g.\ \textit{``raised guidance''} vs.\ \textit{``raised concerns''}),
+precisely where bag-of-words representations fail and contextual models excel.
+
+\subsection{VADER Baseline Analysis}
+
+Applying VADER (Valence Aware Dictionary and sEntiment Reasoner) to all training tweets
+yields approximately 48\% accuracy, well below the 64.7\% majority-class baseline
+(Figure~\ref{fig:vader}). Financial analyst language is factual and understated rather
+than emotionally explicit, causing VADER to systematically map directional statements to
+Neutral. This directly motivates the use of domain-adapted encoders such as FinBERT and
+Twitter-RoBERTa over general-purpose sentiment tools.
+
+\subsection{Encoding Artefacts}
+
+A character-level audit detects UTF-8 mojibake in 7.0\% of the corpus, with Neutral
+carrying the highest rate (8.7\%), followed by Bearish (5.5\%) and Bullish (2.9\%). This
+asymmetry is self-reinforcing: the dominant class already pulls predictions toward Neutral
+and additional noise in its tweets pushes ambiguous cases further in that direction.
+Corrupted apostrophes also cause subword tokenisers to split tokens such as
+\textit{Moody's} into spurious character sequences, wasting token slots without
+contributing signal. These findings motivate the inclusion of an \texttt{ftfy} text repair
+step in the preprocessing pipeline.
+
+\subsection{Near-Duplicate Audit}
+
+No exact duplicates were found in the training set. After normalisation, 201
+near-duplicate rows (2.11\%) were identified, representing URL or encoding variants of
+legitimate tweets rather than true duplicates, so no rows are dropped. Three
+near-duplicate groups carry conflicting labels across different annotations, providing
+direct evidence of annotation noise. Additionally, 42 train/test near-overlapping tweets
+were identified, a property of the externally provided split that cannot be altered.
+
+\subsection{Label Noise Estimation}
+
+An 8-encoder ensemble flags instances where high-confidence predictions disagree with the
+label. At a 95\% confidence threshold, this covers 46 tweets (approximately 0.48\%). A
+representative example, ``\$WING -- Baird returns to Wingstop bull camp'', is labelled
+Neutral yet predicted Bullish at 0.97 confidence, illustrating systematic annotation
+inconsistency at the Bullish/Neutral boundary. This provides a practical lower bound on
+the irreducible error and sets a ceiling on achievable macro-F1 regardless of model
+capacity.
+
+
+\section{Data Preprocessing}
 
 \subsection{Corpus Split and Validation Protocol}
-To satisfy the corpus-split requirement without wasting labelled data, every experiment uses
-\textbf{stratified $k$-fold cross-validation} on the 9{,}543 labelled tweets
-(\texttt{StratifiedKFold}, \texttt{shuffle=True}, \texttt{random\_state=42}). Stratification keeps
-the Bearish/Bullish/Neutral proportions stable in each validation fold, which is essential under the
-4.28:1 imbalance. All transformer fine-tuning and the final solution use \textbf{10 folds} (train
-on 90\%, validate on 10\%), which both enlarges each training split and stabilises the averaged
-test prediction; the broad classical-ML comparison (68 model$\times$feature combinations,
-Section~5.1) uses 5 folds for tractability. Out-of-fold (OOF) predictions give honest, leak-free
-macro-F1 on the full corpus, and the fold-level test probability vectors are averaged to produce
-\texttt{pred\_33.csv}. The identical seed and splitter make every OOF score in this report directly
-comparable within its protocol.
 
-% ── 3. Data Preprocessing ────────────────────────────────────────
-\section{Data Preprocessing}
-We implement six preprocessing techniques following the NLTK-based approach from course Lab~1 and
-the tweet-tokenisation practice from the extra TF--IDF lab. Crucially, preprocessing is treated as an
-\emph{empirical question}: every variant is measured under the same 5-fold protocol before deciding
-what enters the final pipeline.
+The labelled corpus comprises 9{,}543 tweets. Because no held-out validation set was
+provided alongside the training data, all performance estimates are obtained through
+stratified k-fold cross-validation. A single holdout partition was deliberately avoided:
+the minority classes, Bearish (15.1\%) and Bullish (20.2\%), are too infrequent for a
+fixed split to yield stable macro-F1 estimates, particularly for the Bearish class, which
+constitutes only around 1{,}440 samples in total. Stratified k-fold partitioning, which
+preserves the Bearish/Bullish/Neutral class distribution in every fold, was therefore the
+most appropriate choice given the size and imbalance profile of this corpus.
 
-\subsection{Preprocessing Pipeline}
-\begin{itemize}
-  \item \tH{T1 --- Twitter noise cleaning.} Regex removal of URLs and mentions
-  ($\to$ \texttt{USER}); hashtag-symbol stripping; cashtags mapped to \texttt{TICKER\_X}.
-  \item \tH{T2 --- Unicode normalisation.} NFKD decomposition then ASCII encoding.
-  \item \tH{T3 --- Stop-word removal.} NLTK English list, negations preserved
-  (\{not, no, never, neither, nor, none\}) --- critical for sentiment (Manning et al., 2008).
-  \item \tH{T4 --- WordNet lemmatisation.} POS-aware: `beaten' $\to$ `beat', `falling' $\to$ `fall'.
-  \item \tH{T5 --- Snowball stemming.} More aggressive: `earnings' $\to$ `earn'.
-  \item \tH{T6 --- TweetTokenizer.} \texttt{reduce\_len=True}, \texttt{strip\_handles=True}.
-  \item \tH{T7 --- fix\_text (encoding repair).} Motivated by the text-quality audit
-  (Section~2.3): \texttt{ftfy} mojibake repair (Speer, 2019), removal of end-of-tweet truncation
-  artefacts and of sentiment-free URLs. Unlike T1--T6, this step \emph{restores} signal rather than
-  removing it, and alters 50.1\% of tweets.
-\end{itemize}
+Two protocols are employed, differentiated by model family. Classical ML models (BoW,
+TF-IDF, Word2Vec, frozen contextual embeddings, LightGBM and all ablation probes),
+transformer encoder Phase~2 fine-tuning, ensembles and knowledge distillation all use
+\textbf{10-fold} stratified cross-validation
+(\texttt{StratifiedKFold(n\_splits=10, shuffle=True, random\_state=42)}), giving training
+partitions of approximately 8{,}589 samples and validation partitions of approximately
+954. Two lighter-weight experiments use \textbf{5-fold}: the Phase~1 backbone screening
+pass (Section~\ref{sec:encoders}), which evaluates seven candidate architectures with a
+reduced training budget before committing to full 10-fold runs and the GPT-2 decoder
+experiments (Section~\ref{sec:gpt2}), which served as a contrastive probe rather than a
+submission candidate. The choice of 10-fold for the primary pipeline reflects the
+imbalanced minority classes: smaller validation folds (954 samples) improve macro-F1
+stability for the Bearish class while remaining tractable under GPU acceleration. The
+5-fold exceptions balance variance reduction against the additional wall-clock cost of
+configurations that were exploratory rather than submission-critical.
 
-Example transformations are shown in the notebook: URLs and mentions become generic tokens, cashtags
-retain the ticker identity, negations survive stop-word removal, and lemmatisation/stemming reduce
-inflected forms. This demonstrates compliance with the preprocessing requirement while also exposing
-the main trade-off: cleaning removes noise, but may also remove finance-specific signal.
+In both protocols, out-of-fold (OOF) predictions cover the full training corpus without
+data leakage, since each prediction is generated by a model that never trained on that
+sample. The global random seed (42) is fixed across Python, NumPy and PyTorch, ensuring
+all OOF estimates are directly comparable across model families. Class proportions are
+preserved in every fold to within 0.1 percentage points, confirming that stratification
+is effective across the full range of partition sizes.
 
-\subsection{Ablation Study}
-Each configuration is evaluated with Logistic Regression ($C=1.0$) and TF--IDF (10{,}000 vocabulary)
-under 5-fold stratified CV.
+\subsection{Data Preprocessing Pipeline}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.86\linewidth]{report_ablation.png}
-  \caption{Preprocessing ablation: macro-F1 by configuration (green = best). Encoding repair
-  (fix\_text) edges out raw text; every destructive pipeline hurts.}
-  \label{fig:ablation}
-\end{figure}
+The preprocessing pipeline is implemented in \texttt{src/preprocessing.py} and shared
+across all model families, though not applied identically to all of them. The pipeline
+does not constitute a single fixed strategy: rather, different feature representations
+receive different subsets of the available steps, as detailed in
+Section~\ref{sec:ensemble}.
 
-\begin{table}[H]
-  \centering
-  \small
-  \setlength{\tabcolsep}{8pt}
-  \begin{tabularx}{0.86\linewidth}{@{}>{\raggedright\arraybackslash}X r r@{}}
-    \toprule
-    \tH{Preprocessing configuration} & \tH{Macro-F1} & \tH{Std} \\
-    \gmid
-    \rowcolor{lightgray} light cleaning only (URL/ticker tokens, lowercase) & \textbf{0.7179} & 0.0038 \\
-    raw (no preprocessing)                                   & 0.7152 & 0.0040 \\
-    raw + fix\_text (ftfy repair)                            & 0.7149 & 0.0032 \\
-    clean + stop-words + lemmatisation                       & 0.7068 & 0.0045 \\
-    clean + stop-words + stemming                            & 0.7062 & 0.0080 \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Preprocessing ablation (5-fold CV, LR + TF--IDF, vectoriser fitted \emph{inside} each
-  fold). The top three variants are tied within one standard deviation; stemming and lemmatisation
-  cost $\sim$1pp.}
-  \label{tab:ablation}
-\end{table}
+\subsubsection{Motivation}
 
-\textbf{Key finding:} for sparse models, light or no preprocessing variants are statistically
-\emph{tied} (0.715--0.718), while aggressive stemming/lemmatisation \emph{destroys} signal
-($-$1pp) --- ticker symbols (\$AAPL), analyst-firm names and domain vocabulary (`downgrade',
-`EPS beat', `guidance raise') are discriminative features (Go et al., 2009). The value of
-fix\_text does not show at TF--IDF level (the vectoriser tokenises encoding artefacts away) but
-emerges with fine-tuned transformers, whose subword vocabularies are sensitive to corrupted bytes:
-\textbf{+0.26pp} on FinBERT (0.9056 $\to$ 0.9082) and +0.07pp on DeBERTa-v3-large (0.8882 $\to$
-0.8889) under the 10-fold protocol (full ablation in \nolinkurl{tm_tests_33.ipynb}, Section~5g).
-The final pipeline therefore feeds the transformer \emph{repaired raw text}: fix\_text only, no
-destructive cleaning. (Methodological note: this table was re-measured with the vectoriser fitted
-inside each fold after an internal leakage audit; the conventional fit-once protocol used in the
-broad 68-combination comparison of Section~5.1 inflates sparse baselines uniformly by
-$\approx$0.4pp without changing any ranking.)
+Three findings from the exploratory analysis directly informed the pipeline design.
+Approximately 75\% of tweets carry no strongly polarised lexical signal, meaning that
+aggressive token removal risks discarding the contextual cues that distinguish ambiguous
+financial language. The Bearish class, being the hardest to classify, relies
+disproportionately on negation constructions, so a standard stopword list that removes
+\texttt{not}, \texttt{no}, or \texttt{never} would invert the sentiment of expressions
+such as ``not bullish'' or ``can't sustain growth,'' directly harming Bearish recall.
+Finally, cashtags and hashtags exhibit class-specific distributional differences
+identified during the EDA and their surface forms carry structural information that
+should be preserved rather than discarded.
+
+\subsubsection{Techniques}
+
+Six preprocessing techniques are implemented, each motivated by the characteristics of
+the domain. \textbf{Twitter noise cleaning (regex)}, applied via regular expressions, maps URLs and user
+mentions to placeholder tokens and converts cashtags to structured identifiers (e.g.\
+\texttt{\$TSLA} to \texttt{TICKER\_TSLA}), preserving ticker identity without introducing
+raw symbols into the vocabulary. \textbf{Unicode normalisation (NFKD + ASCII)}, using NFKD decomposition followed
+by ASCII transliteration, resolves curly quotes, bullet characters and non-ASCII currency
+symbols that would otherwise fragment the vocabulary across visually identical surface
+forms. \textbf{Stop-word removal} is applied with a negation preservation whitelist: contractions
+are first expanded (e.g.\ \texttt{n't} to \texttt{not}, \texttt{don't} to \texttt{do not})
+before filtering and tokens such as \texttt{not}, \texttt{no}, \texttt{never},
+\texttt{neither} and \texttt{nor} are explicitly excluded from removal. Tokenisation uses
+NLTK's \texttt{TweetTokenizer}, which handles tweet-specific punctuation and emoticons
+while operating on the noise-cleaned text. Two morphological reduction strategies are also
+implemented as alternatives: \texttt{WordNet lemmatisation} and \texttt{Snowball stemming}. Lemmatisation is
+preferred for dense representations because stemming tends to over-compress financially
+relevant terms, collapsing distinct roots that carry different sentiment signals. Both are
+evaluated empirically in the ablation below.
+
+
+\subsubsection{Vocabulary Reduction}
+
+To quantify the pipeline's effect on sparsity, 500 tweets per class were sampled from the
+training set and passed through the full pipeline. As shown in
+Figure~\ref{fig:vocabreduction} (token count across preprocessing stages and vocabulary
+reduction by class, Section~3.5 of the notebook), the vocabulary reduction is broadly
+consistent across Bearish, Bullish and Neutral tweets, which is expected given that the
+pipeline is class-agnostic by design. Any class-specific effects, such as Bearish tweets
+retaining more tokens due to negation preservation, are attributable to content
+differences rather than to the pipeline itself.
+
+\subsubsection{Preprocessing Ablation}
+
+A preliminary ablation evaluates five preprocessing configurations using a fixed probe
+classifier, Logistic Regression with a 10{,}000-feature TF-IDF vocabulary, under the
+leak-free 5-fold cross-validation protocol, with the vectoriser fitted inside each fold.
+The results, summarised in Figure~\ref{fig:ablation} (Preprocessing Ablation Study,
+Section~3.7 of the notebook), show a narrow but consistent ordering: light cleaning alone
+(``clean only'', macro-F1 = 0.7179) outperforms all more aggressive variants, with the
+addition of stopword removal and lemmatisation reducing performance to 0.7068 and
+stemming reducing it further to 0.7062. Applying no preprocessing at all yields 0.7152,
+confirming that noise cleaning provides a small but consistent benefit while further
+morphological reduction is counterproductive for this corpus. This pattern aligns with the
+EDA observation that financially relevant vocabulary, including tickers, event verbs and
+analyst terminology, carries discriminative signal that aggressive normalisation tends to
+suppress. The differences across configurations are small and within one standard
+deviation, so no strong causal claim is drawn from this probe alone.
+
 
 % ── 4. Feature Engineering ───────────────────────────────────────
 \section{Feature Engineering}
-Eleven feature representations are computed, covering the three families required by the brief:
-bag-of-words, Word2Vec and Transformer Encoder.
 
-\subsection{Sparse Representations (BoW)}
-Four sparse sets on raw text: \textbf{BoW} (binary CountVectorizer, \texttt{max\_features=20k},
-\texttt{min\_df=2}); \textbf{TF--IDF 1g} (\texttt{max\_features=20k}, \texttt{max\_df=0.80},
-\texttt{min\_df=2}); \textbf{TF--IDF 2g} (uni+bigram, \texttt{max\_features=50k}); and
-\textbf{TF--IDF char} (char 3--5-gram, \texttt{max\_features=30k}).
+Feature engineering converts each tweet into a numerical vector that a classifier can process.
+Eleven representations were built across four families, progressing from sparse and interpretable
+baselines to rich contextual embeddings.
 
-\subsection{Word Embeddings (Word2Vec / GloVe)}
-\textbf{Word2Vec Skip-gram} and \textbf{CBOW} (200d) trained on the corpus (Mikolov et al., 2013),
-pooled by TF--IDF-weighted mean; and \textbf{GloVe-Twitter-100} pre-trained on 2B tweets
-(Pennington et al., 2014).
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llrll}
+\toprule
+\textbf{Family} & \textbf{Representation} & \textbf{Dim} & \textbf{Alignment} & \textbf{Rubric} \\
+\midrule
+Sparse  & BoW (binary)                  & $\leq$20k & —                        & Base \\
+        & TF-IDF unigrams               & $\leq$20k & —                        & Base \\
+        & TF-IDF unigrams+bigrams       & $\leq$50k & Financial expressions    & Base \\
+        & TF-IDF char 3–5grams          & $\leq$30k & Twitter spelling noise   & Base \\
+\midrule
+Static  & Word2Vec Skip-gram            & 200       & In-domain corpus         & Base \\
+        & Word2Vec CBOW                 & 200       & In-domain corpus         & Base \\
+        & GloVe-Twitter-100             & 100       & Twitter (2B tweets)      & Base \\
+\midrule
+Contextual & FinBERT CLS               & 768       & Finance                  & Base (obligatory) \\
+           & SBERT all-mpnet           & 768       & General-purpose          & \textbf{EXTRA} \\
+           & Twitter-RoBERTa CLS       & 768       & Twitter (58M tweets)     & \textbf{EXTRA} \\
+\midrule
+Hand-crafted & Financial features      & 14        & Finance + Twitter surface & Base \\
+\bottomrule
+\end{tabular}
+\caption{Feature representations implemented. Representations marked \textbf{EXTRA} are
+additional Transformer Encoder methods beyond the rubric requirement, each contributing
++0.50 points to the Feature Engineering extra-work criterion.}
+\label{tab:features}
+\end{table}
 
-\subsection{Transformer Embeddings (Encoder)}
-Three transformer representations (CLS / mean-pooling): \textbf{FinBERT} (Araci, 2019);
-\textbf{SBERT all-mpnet-base-v2} (Reimers \& Gurevych, 2019; +0.50 extra); and
-\textbf{Twitter--RoBERTa} (Barbieri et al., 2020; +0.50 extra). The latter two count as additional
-Transformer Encoder methods for the extra-work criterion, and the Twitter--RoBERTa family is carried
-forward to end-to-end fine-tuning in Section~5.2.
+\subsection{Sparse Representations (BoW and TF-IDF)}
+
+Both BoW and TF-IDF represent each tweet as a vector with one position per vocabulary word.
+Binary BoW records word presence/absence and serves as an interpretable lower bound.
+TF-IDF improves on this by weighting each word by how distinctive it is across the corpus:
+rare financial terms like \textit{downgrade} or \textit{beats} receive high weight while common
+words are suppressed. The unigram+bigram variant adds two-word sequences to capture financial
+expressions such as \textit{price target} or \textit{earnings beat} that vanish at the word
+level. The character 3–5gram variant operates on overlapping character sequences, making the
+representation robust to Twitter spelling noise (\textit{bullllish} and \textit{bullish} share
+most character sequences and produce similar vectors). All sparse methods share a fundamental
+limitation: they treat words independently, with no notion of order or context.
+
+\subsection{Static Word Embeddings (Word2Vec and GloVe)}
+
+Word2Vec learns a dense vector per word by training a neural network to predict words from
+their context, so semantically related words end up numerically close : \textit{bullish} and
+\textit{optimistic} become neighbours in the vector space. Skip-gram predicts context from the
+centre word and handles rare financial terms better; CBOW predicts the centre word from context
+and is stronger on frequent vocabulary. Both 200-dimensional models are trained on the 9,543
+in-domain tweets. GloVe-Twitter-100, pre-trained on 2 billion tweets,
+provides broader coverage of informal Twitter language at the cost of financial specificity.
+Each tweet is represented by mean pooling its token vectors. The key remaining limitation is
+context-insensitivity: the vector for \textit{cut} is identical in \textit{Fed cuts rates} and
+\textit{analyst cuts target}, despite opposite implications.
+
+\subsection{Contextual Transformer CLS Embeddings}
+
+Transformer encoders solve context-insensitivity by reading the entire sequence through
+self-attention, where each word's representation is shaped by all other words in the tweet.
+A special \texttt{[CLS]} token accumulates this information across all encoder layers, producing
+a 768-dimensional contextualised summary of the tweet. Three encoders
+are used in frozen mode (weights not updated) as pure feature extractors.
+
+\textbf{FinBERT} (Araci, 2019), fine-tuned on financial news and earnings reports, provides
+direct domain alignment for financial vocabulary and sentiment. However, its training corpus
+is formal text, which limits its ability to handle the informal language, abbreviations, and
+noise typical of Twitter.
+
+\textbf{SBERT all-mpnet-base-v2} (Reimers \& Gurevych, 2019) is trained with contrastive
+objectives, producing embeddings well-suited for similarity-based classifiers — however, it
+has no alignment with either financial text or Twitter language.
+\textbf{This constitutes Extra Work \#1 under the Feature Engineering criterion.}
+
+\textbf{Twitter-RoBERTa} (Barbieri et al., 2020), pre-trained on 58M tweets, handles informal
+language, abbreviations, and the noisy writing style typical of Twitter — however, its
+pre-training corpus is general Twitter data, not financial text specifically, so it may miss
+domain-specific vocabulary.
+\textbf{This constitutes \textbf{Extra Work} \#2 under the Feature Engineering criterion.}
+
+PCA projections of the three encoder spaces confirmed that FinBERT (47.1\% variance explained)
+and Twitter-RoBERTa (52.0\%) produce visibly cleaner class separation than SBERT (7.7\%).
 
 \subsection{Financial Hand-crafted Features}
-A 14-dimensional vector combines VADER scores (Hutto \& Gilbert, 2014) with surface statistics
-(cashtag/hashtag/mention/URL counts, length, capitalisation, punctuation) and a Flesch--Kincaid
-readability score.
+
+A 14-dimensional vector captures Twitter surface signals that no unsupervised embedding learns
+by design: VADER sentiment scores (\textit{pos}, \textit{neg}, \textit{neu}, \textit{compound};
+Hutto \& Gilbert, 2014), cashtag, hashtag, mention and URL counts, word and character count,
+exclamation and question marks, all-caps ratio, and Flesch readability score. A fusion
+experiment concatenating these features with SBERT embeddings (782 dimensions total) yielded
+a marginal gain of +0.0032 F1-macro, suggesting SBERT already captures most surface signal
+implicitly : a useful negative result that informed the final feature-set decision.
 
 % ── 5. Classification Models ─────────────────────────────────────
 \section{Classification Models}
-All models are evaluated via stratified cross-validation (\texttt{StratifiedKFold},
-\texttt{random\_state=42}) with macro-F1 as the primary metric --- 5 folds for the broad classical
-sweep (Section~5.1), 10 folds for all transformer fine-tuning and the final solution
-(Sections~5.2--5.4). Within each protocol the identical split makes the out-of-fold (OOF) scores
-directly comparable.
+The classification experiments follow a deliberate progression from simple to complex, with each stage motivated by the limitations of the preceding one. Four model families are evaluated: classical machine learning models over engineered feature sets, transformer encoders used first as frozen feature extractors and then fine-tuned end-to-end, a decoder-based classifier included as a contrastive experiment, and an ensemble of the strongest fine-tuned encoders. Sections 5.3 and 5.5 constitute additional exploratory work beyond the core submission.
 
-\subsection{Traditional ML Models}
+
+
+
+\subsection{Traditional ML}
+We pair each model family with the feature representations it suits best.
+Sparse models (NB/LR/SVM) run on BoW and TF-IDF (1g/2g/char);
+dense models run on Word2Vec, GloVe and frozen encoder embeddings (FinBERT/SBERT/RoBERTa):
+
 \begin{itemize}
-  \item \tH{Na\"ive Bayes.} MultinomialNB ($\alpha=1.0$) and ComplementNB ($\alpha=0.5$) on
-  BoW / TF--IDF; ComplementNB targets imbalance (Rennie et al., 2003).
-  \item \tH{Logistic Regression.} $L_2$ (SAGA), $C \in \{0.1, 1.0, 10.0\}$, all feature sets.
-  \item \tH{Linear SVM.} CalibratedClassifierCV(LinearSVC), $C \in \{0.1, 1.0\}$.
-  \item \tH{KNN.} $k \in \{5, 15\}$, cosine distance, dense embeddings.
-  \item \tH{MLP.} $(256,128)$ and $(512,256,128)$, ReLU, early stopping.
-  \item \tH{Random Forest / XGBoost / LightGBM.} 100 and 300 estimators; LightGBM is the strongest
-  traditional learner on dense embeddings.
+  \item \tH{Na\"ive Bayes:} MultinomialNB ($\alpha=1.0$) and ComplementNB ($\alpha=0.5$)
+    on sparse features; ComplementNB handles class imbalance better (\cite{rennie2003tackling}).
+  \item \tH{Logistic Regression:} $L_2$ (SAGA), $C \in \{0.1, 1.0, 10.0\}$, all feature
+    sets; a C-tuned variant via Optuna ($C^*=8.86$) on TF--IDF 2g is also included.
+  \item \tH{Linear SVM:} \texttt{CalibratedClassifierCV(LinearSVC)}, $C \in \{0.1, 1.0\}$,
+    sparse features.
+  \item \tH{KNN:} $k \in \{5, 15\}$, cosine distance, dense embeddings.
+  \item \tH{MLP:} $(256,128)$, ReLU, early stopping, dense embeddings.
+  \item \tH{Random Forest / XGBoost / LightGBM:} 100 and 300 estimators; LightGBM is the
+    strongest traditional learner on dense features and is additionally tuned with
+    \textbf{Optuna} (\cite{akiba2019optuna}) - TPE sampler, median pruner, 50 trials - on
+    frozen RoBERTa embeddings.
 \end{itemize}
 
-\subsection{Transformer Encoder Fine-tuning + Backbone Search}
-Whereas Section~4.3 used the encoders only as \emph{frozen} embeddings, here the full encoder is
-fine-tuned end-to-end (Devlin et al., 2019) --- the single largest lever in this study. Using the
-Hugging Face Hub for \textbf{model selection}, we shortlist nine candidate configurations and
-fine-tune each under the identical 10-fold protocol: 5--10 epochs, learning rate
-$5\times10^{-6}$--$10^{-5}$ with cosine warmup, batch 8--16 (gradient accumulation to effective 32
-for the large models), max length 128, AdamW, gradient clipping 1.0, inverse-frequency
-class-weighted cross-entropy with label smoothing 0.05, fp16 mixed precision with loss scaling, and
-best-checkpoint-per-fold selection on validation F1 (NVIDIA RTX~5070).
-Table~\ref{tab:backbones} reports the comparison.
+All 68 classical (model~$\times$~feature) combinations were produced by \texttt{`scripts/run\_classical\_ml.py`} through the shared \texttt{`evaluate\_model`} routine in \texttt{`src/evaluation.py`} under 10-fold stratified cross-validation. The two Optuna-tuned configurations are described in \texttt{`scripts/run\_optuna\_tuning.py`}. All results are  consolidated in \texttt{results/tables/classical\_ml\_full.csv}. These results define the non-neural performance boundary and motivate end-to-end fine-tuning, where the encoder weights themselves adapt to the task's label space.
+
+\subsection{Transformer Encoders for Classification}
+\label{sec:encoders}
+Whereas before we used the encoders only as \emph{frozen} embeddings, here the full
+encoder is fine-tuned end-to-end (\cite{devlin2019bert}). Backbone and configuration selection followed a deliberate two-phase process.
+
+\textbf{Phase 1 - Backbone screening:} A lightweight 5-fold pass
+(AdamW, cosine schedule, class-weighted CE, fp16, 4\,ep, lr\,$=2\!\times\!10^{-5}$,
+maxlen\,96) was run over seven candidate architectures to identify the most promising families without committing to the cost of full 10-fold training. FinBERT-fintwitter (`nickmuchi/finbert-tone-finetuned-fintwitter-classification`) was entered directly into the 10-fold phase as the primary domain-matched backbone, given its direct pre-training alignment with financial Twitter text.
+Two patterns emerged: larger models consistently outperform their base equivalents, and
+domain-specific pre-training matters - \texttt{ProsusAI/finbert} scored $\approx7$\,pp
+below the fintwitter variant on this exact task. Among the screened backbones, Twitter-RoBERTa-large-topic-sentiment was retained;
+all base-size models and weaker large models were dropped.
+
+\textbf{Phase 2 - Configuration tuning:} Eight encoder configurations were trained under the full 10-fold stratified protocol, covering four backbone families with systematic variation of epochs, learning rate, and the `fix\_text` preprocessing flag. The shared training protocol used AdamW with a cosine schedule and linear warmup, gradient clipping at 1.0, fp16 mixed precision, class-weighted cross-entropy with label smoothing of 0.05, and best-checkpoint selection per fold on validation macro-F1. DeBERTa-v3-large required gradient accumulation (effective batch size 32) and a longer warmup ratio (10\% versus 6\%) due to its depth; an initial run without fp16 GradScaler collapsed to single-class prediction and was discarded. The configurations are detailed in Table ~\ref{tab:encoder_configs}.
 
 \begin{table}[H]
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r@{}}
-    \toprule
-    \tH{Backbone (fine-tuned end-to-end, 10-fold)} & \tH{Params} & \tH{OOF F1} & \tH{Acc.} \\
-    \gmid
-    \rowcolor{lightgray} \textbf{FinBERT-fintwitter, 10 ep + fix\_text} & 110M & \textbf{0.9082} & \textbf{0.9293} \\
-    FinBERT-fintwitter, 7 ep + LLRD 0.9 + fix\_text         & 110M & 0.9080 & 0.9285 \\
-    FinBERT-fintwitter, 10 ep (raw text)                    & 110M & 0.9056 & 0.9275 \\
-    FinBERT-fintwitter, 7 ep                                & 110M & 0.9049 & 0.9264 \\
-    FinBERT-fintwitter, 5 ep                                & 110M & 0.9025 & 0.9243 \\
-    twitter-roberta-large-topic-sentiment (prev.\ submission) & 355M & 0.8943 & 0.9141 \\
-    DeBERTa-v3-large, 6 ep + fix\_text (He et al., 2021)$^\dagger$ & 435M & 0.8889 & 0.9107 \\
-    DeBERTa-v3-large, 6 ep                                  & 435M & 0.8882 & 0.9100 \\
-    DeBERTa-v3-base finance, 8 ep + fix\_text               & 184M & 0.8715 & 0.8947 \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Transformer backbone search (identical 10-fold protocol, seed 42). The shaded
-  FinBERT-fintwitter is the best individual encoder and the distillation student of Section~5.3.
-  LLRD = layer-wise learning-rate decay. $^\dagger$DeBERTa-v3 requires fp32 master weights with
-  loss scaling --- its disentangled attention overflows in plain fp16.}
-  \label{tab:backbones}
+\centering
+\caption{Official 10-fold encoder configurations.}
+\label{tab:encoder_configs}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllccccr}
+\hline
+\textbf{Tag} & \textbf{Backbone} & \textbf{Folds} & \textbf{Epochs} & \textbf{LR} & \textbf{fix\_text} & \textbf{LLRD} \\
+\hline
+\texttt{finbert\_fintwitter}
+  & \texttt{nickmuchi/finbert-tone-finetuned-fintwitter-classification}
+  & 10 & 5  & 1e-05 & False & 0.0000 \\
+
+\texttt{finbert\_fintwitter\_7ep}
+  & \texttt{nickmuchi/finbert-tone-finetuned-fintwitter-classification}
+  & 10 & 7  & 8e-06 & False & 0.0000 \\
+
+\texttt{finbert\_fintwitter\_10ep}
+  & \texttt{nickmuchi/finbert-tone-finetuned-fintwitter-classification}
+  & 10 & 10 & 5e-06 & False & 0.0000 \\
+
+\texttt{finbert\_fintwitter\_10ep\_fixtext}
+  & \texttt{nickmuchi/finbert-tone-finetuned-fintwitter-classification}
+  & 10 & 10 & 5e-06 & True  & 0.0000 \\
+
+\texttt{roberta\_large\_ts\_v2}
+  & \texttt{cardiffnlp/twitter-roberta-large-topic-sentiment-latest}
+  & 10 & 5  & 1e-05 & False & 0.0000 \\
+
+\texttt{deberta\_base\_finance\_fixtext}
+  & \texttt{nickmuchi/deberta-v3-base-finetuned-finance-text-classification}
+  & 10 & 8  & 1e-05 & True  & 0.0000 \\
+
+\texttt{debertav3\_large\_6ep}
+  & \texttt{microsoft/deberta-v3-large}
+  & 10 & 6  & 1e-05 & False & 0.0000 \\
+
+\texttt{debertav3\_large\_6ep\_fixtext}
+  & \texttt{microsoft/deberta-v3-large}
+  & 10 & 6  & 1e-05 & True  & 0.0000 \\
+\hline
+\end{tabular}%
+}
 \end{table}
 
-The decisive factor is \textbf{domain-matched pre-training, not size}: the winning encoder
-(\ttt{nickmuchi/finbert-tone-finetuned-fintwitter-classification}) is a 110M-parameter FinBERT
-(Araci, 2019) already adapted to financial-Twitter text, and it outperforms a four-times-larger
-DeBERTa-v3-large by $\sim$2pp. We replace its classification head with a fresh 3-class head and
-fine-tune the complete network. Best individual configuration: OOF macro-F1 \textbf{0.9082}
-($\pm$0.0098), accuracy 0.9293, precision 0.9008, recall 0.9163 --- a \textbf{+0.1061} gain over
-the 0.8021 frozen-embedding baseline and +0.0139 over our previous submission candidate
-(Twitter--RoBERTa-large, 0.8943). Two further observations: (i) the fix\_text repair contributes
-+0.26pp at no architectural cost (Section~3.2); (ii) LLRD ties the best model (0.9080) but trains
-with different layer dynamics --- useful diversity for the ensemble below.
+Three configuration choices for FinBERT-fintwitter - the highest-performing backbone -
+were additionally explored: epoch/lr combinations (5\,@\,$10^{-5}$, 7\,@\,$8\!\times\!10^{-6}$,
+10\,@\,$5\!\times\!10^{-6}$), \texttt{fix\_text} encoding repair (+0.26\,pp, Section~3.2),
+and LLRD ($\lambda=0.9$, which ties the best model in aggregate but trains with different
+per-layer dynamics - useful diversity for the ensemble).
+All per-fold scores are in \texttt{results/tables/encoder\_results.csv}.
 
-\subsection{Ensemble and Knowledge Distillation (Extra Work)}
-\label{sec:distill}
-The backbone search leaves us with several strong, partially decorrelated encoders. As extra work
-we combine them by \textbf{weighted soft-voting}: test probabilities are averaged with per-model
-weights found by \emph{exhaustive} OOF grid search --- all $2^8$ model subsets crossed with weights
-$\{0.25, 0.5, 0.75, 1.0\}$, evaluated on leak-free OOF predictions. The optimum keeps eight models
-(four at weight 1.0, three at 0.75, one at 0.5) and reaches OOF macro-F1 \textbf{0.9201} ---
-+1.19pp over the best individual encoder. A paired bootstrap over the 9{,}543 OOF predictions
-(1{,}000 resamples) puts the 95\% confidence interval of this gain at $[+0.0066, +0.0172]$,
-excluding zero: the improvement is real, not resampling noise (Section~6.3).
+\subsection{Decoder Model - GPT-2}
+\label{sec:gpt2}
+All models in Section~5.2 are \emph{encoders} (BERT-family, bidirectional): they read the
+full tweet simultaneously. \textbf{Decoder} models (GPT-family, causal/autoregressive) were
+designed for text generation. Fine-tuning a decoder for classification is therefore a deliberate contrastive experiment, measuring the value of the bidirectional inductive bias on this task.
 
-The delivery rules, however, require the final solution to be \emph{``a single pipeline with a
-single classification model''} (Guidelines~5.2). Rather than discard the ensemble or break the
-rule, we \textbf{distil} it (Hinton et al., 2015): the eight-model ensemble becomes the
-\emph{teacher}, and a single FinBERT-fintwitter student is trained on the combined objective
-\[
-\mathcal{L} \;=\; (1-\alpha)\,\mathrm{CE}_{\text{weighted}}(y, p_s)
-\;+\; \alpha\, T^2\, \mathrm{KL}\!\left(p_t^{(T)} \,\|\, p_s^{(T)}\right),
-\qquad \alpha = 0.5,\; T = 2,
-\]
-where the teacher targets $p_t$ are the ensemble's \emph{out-of-fold} probabilities --- each
-training sample's soft target comes from folds that never saw that sample, so the distillation
-itself is leakage-free. Training otherwise mirrors the 10-fold recipe of Section~5.2, extended to
-12 epochs: because soft targets regularise, the student benefits from longer training (+0.18pp on
-a 3-fold proxy, confirmed on the full protocol). A grid search
-over the distillation hyperparameters ($\alpha \in \{0.5, 0.7, 0.9, 1.0\}$, $T \in \{2, 3\}$,
-3-fold proxy) confirmed $\alpha{=}0.5$, $T{=}2$ as optimal; R-Drop consistency regularisation and
-post-hoc per-class probability scaling were also evaluated and \emph{rejected}, as their held-out
-gains were within noise --- consistent
-with the calibration analysis of Section~6.3. The distilled
-student reaches OOF macro-F1 \textbf{\distf} (accuracy \distacc) --- recovering 48\% of the
-ensemble's gain in a single 110M-parameter model, itself a statistically significant improvement
-over the best conventionally-trained encoder (paired bootstrap 95\% CI: $[+0.0023, +0.0094]$).
-This is the \textbf{submitted solution} (\nolinkurl{pred_33.csv}, produced by the single pipeline
-in \nolinkurl{tm_final_33.ipynb}).
+Two settings are compared under the 5-fold protocol:
+\begin{itemize}
+  \item \tH{Fine-tuned classifier.} \texttt{GPT2ForSequenceClassification} pools the last
+    non-padding token into a 3-class linear head; all parameters are trained end-to-end
+    (4\,ep, lr\,$=2\!\times\!10^{-5}$, batch\,16, class-weighted CE, linear warmup\,10\,\%).
+    EOS is reused as the padding token since GPT-2 has no native pad.
+  \item \tH{Few-shot prompting.} Three labelled examples per class are prepended to a new
+    tweet with no parameter updates (contextual calibration \cite{zhao2021calibrate}). This is
+    a lower bound on what an untuned decoder achieves.
+\end{itemize}
 
-\subsection{Decoder Model --- Fine-tuned GPT-2 (Extra Work, +1.00 pt)}
-As decoder-based extra work we use a \emph{decoder} (causal) language model for classification.
-\textbf{GPT-2} (Radford et al., 2019) is fine-tuned end-to-end with a sequence-classification head
-(\texttt{GPT2ForSequenceClassification}, which pools the last non-pad token) under the same 5-fold
-protocol. It reaches an OOF macro-F1 of \textbf{0.7724} (accuracy 0.8125) --- a genuine
-decoder-for-classification result. For completeness we also tried \emph{few-shot prompting} of GPT-2
-in the in-context-learning style of GPT-3 (Brown et al., 2020), using verbalizer likelihood scoring
-with contextual calibration (Zhao et al., 2021); it collapses to the majority class (macro-F1
-$\approx$ 0.25), empirically showing that a 124M decoder is too weak to classify zero/few-shot and
-that fine-tuning is the correct route.
+\subsection{Ensembles}
+\label{sec:ensemble}
+The eight fine-tuned encoders from Section~5.2 were chosen deliberately to span different
+pre-training domains (financial-Twitter, generic-Twitter, general-finance), architectures
+(BERT/RoBERTa/DeBERTa) and text preprocessing regimes. This diversity produces partially
+uncorrelated errors: tweets that one model misclassifies are often correctly classified by
+another, and averaging probability vectors smooths out individual failures. GPT-2 is excluded as its performance sits below the weakest encoder and its inclusion would dilute rather than improve the aggregate signal. Three strategies were compared on the 10-fold OOF probability vectors of the fine-tuned encoders:
+\begin{itemize}
+  \item \tH{Simple soft-voting:} Probability vectors averaged with equal weights or weights
+    proportional to individual OOF F1.
+  \item \tH{Stacked generalisation:} OOF probability vectors concatenated
+into an 18-dimensional meta-feature matrix; a Logistic-Regression meta-learner trained on top (5-fold, leakage-free). Five models whose OOF files were available at the time  were used as base learners. \cite{wolpert1992stacked})
+  \item \tH{Optimised weighted soft-voting;} Coordinate-ascent over
+    $\{0.25,\,0.5,\,0.75,\,1.0\}^8$: each model's weight is updated one at a time, keeping
+    any change that improves OOF macro-F1, until convergence.
+\end{itemize}
 
-\subsection{Hyperparameter Tuning --- Optuna}
-Optuna (Akiba et al., 2019) with a TPE sampler and median pruner runs 50 trials over LightGBM
-hyperparameters; the best frozen-embedding configuration reaches macro-F1 0.8021 (RoBERTa features).
-A second study tunes Logistic-Regression $C$ on TF--IDF bigrams; a soft-voting LR+SVC ensemble
-provides a strong sparse baseline.
-
-\subsection{Stacking Ensemble (Extra Work)}
-As additional work we build a stacked generalisation (Wolpert, 1992): six base learners
-(Optuna-tuned LightGBM on RoBERTa, MLP on SBERT, XGBoost on RoBERTa, LightGBM on FinBERT, LR on
-TF--IDF bigrams, and a fine-tuned Twitter--RoBERTa) emit out-of-fold probabilities concatenated into
-an 18-dimensional meta-feature matrix on which a Logistic-Regression meta-learner is trained. Because
-every base learner shares the identical fold split, the meta-features are leakage-free. The stack
-reaches OOF macro-F1 \textbf{0.8483} --- strong at the time, but ultimately surpassed both by the
-individually fine-tuned encoders of Section~5.2 and by the soft-vote ensemble of Section~5.3, which
-combines stronger, more diverse base models.
-
-% ── 6. Results ───────────────────────────────────────────────────
-\section{Results and Evaluation}
-
-\subsection{Model Comparison}
-Figure~\ref{fig:results} ranks the top configurations and Table~\ref{tab:results} lists the top
-models. The eight-encoder ensemble (extra work) tops the ranking at OOF macro-F1 \textbf{0.9201};
-the \textbf{submitted single model} --- the FinBERT student distilled from it --- follows at
-\textbf{\distf}, ahead of every conventionally-trained encoder. The progression of the project is
-visible in the table: frozen embeddings plateau at $\sim$0.80, generic fine-tuned encoders reach
-0.88--0.89, the domain-matched FinBERT reaches 0.91, and ensembling plus distillation extracts the
-last point.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.84\linewidth]{report_results.png}
-  \caption{Model comparison under the common OOF protocol (transformers: 10-fold; classical
-  models: 5-fold). Green bars: ensemble teacher and submitted distilled student.}
-  \label{fig:results}
-\end{figure}
+The stacking experiment was conducted before all fine-tuned encoders were available; once all eight 10-fold models were trained, soft-voting with optimised weights superseded it.
+The optimal weights assign 1.0 to four models, 0.75 to three, and 0.5 to the most architecture-distinct member (\texttt{deberta-base-finance-fixtext}). All eight members
+receive raw tweet text directly to their own transformer tokeniser -
+\textbf{no BoW, Word2Vec, or GloVe features are used}; the only input-side variation
+is whether \texttt{fix\_text} encoding repair is applied. Table~\ref{tab:ensemble_members}
+lists the composition.
 
 \begin{table}[H]
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{5pt}
+  \centering\footnotesize\setlength{\tabcolsep}{4pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r c r@{}}
+    \toprule
+    \tH{Backbone} & \tH{Params} & \tH{Ep.} & \tH{fix\_text} & \tH{Weight} \\
+    \gmid
+    FinBERT-fintwitter                    & 110\,M & 10 & \checkmark & 1.00 \\
+    FinBERT-fintwitter + LLRD             & 110\,M &  7 & -        & 1.00 \\
+    Twitter-RoBERTa-large (prev.\ subm.)  & 355\,M &  5 & -        & 1.00 \\
+    DeBERTa-v3-large                      & 435\,M &  6 & -        & 1.00 \\
+    FinBERT-fintwitter                    & 110\,M & 10 & -        & 0.75 \\
+    FinBERT-fintwitter                    & 110\,M &  5 & -        & 0.75 \\
+    DeBERTa-v3-large                      & 435\,M &  6 & \checkmark & 0.75 \\
+    DeBERTa-v3-base-finance               & 184\,M &  8 & \checkmark & 0.50 \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Ensemble composition}
+  \label{tab:ensemble_members}
+\end{table}
+
+\subsection{Knowledge Distillation}
+\label{sec:distill}
+
+As extra work, we ask whether the ensemble's knowledge can be compressed into a
+single deployable model via knowledge distillation~\cite{hinton2015distilling}.
+The \textbf{teacher} is the 8-model weighted soft-vote ensemble; its leakage-free OOF probability vectors serve as soft
+targets, with each sample's target drawn from folds the ensemble never trained
+on, ensuring fully leakage-free distillation.
+Before use, the teacher probabilities are re-softened with temperature~$T$:
+$p_T^{(T)}=\mathrm{softmax}\!\left(\log(p_T+\varepsilon)/T\right)$.
+The \textbf{student} is \texttt{nickmuchi/finbert-tone-finetuned-fintwitter-%
+classification}, the same backbone as the best individual encoder. The loss function is defined as:
+\[
+\mathcal{L}
+= (1-\alpha)\,\mathrm{CE}_{\mathrm{weighted}}(y,\,p_S)
++ \alpha\,T^{2}\,
+  \mathrm{KL}\!\left(\log p_S^{(T)}\,\Big\|\,p_T^{(T)}\right),
+\quad \alpha=0.5,\quad T=2.0.
+\]
+The hard-label cross-entropy term uses inverse-frequency class weights.
+The KL term is computed as
+$\mathrm{kl\_div}(\log\mathrm{softmax}(\mathrm{logits}/T),\;p_T^{(T)})$
+with \texttt{reduction="batchmean"} and scaled by $T^{2}$.
+
+Training follows 10-fold stratified CV (seed 42, \texttt{fix\_text=True}), with AdamW ($\eta=5\times10^{-6}$,
+weight decay $0.01$), cosine schedule with 6\% linear warmup, gradient
+clipping at 1.0, batch size 16, and \texttt{maxlen=128}.
+The best checkpoint per fold is selected by validation F1-macro.
+A 3-fold proxy search (via \texttt{--max-folds 3}) over
+$\alpha\in\{0.5,0.7,0.9,1.0\}$ and $T\in\{2,3\}$ confirmed the defaults.
+
+Three configurations were evaluated (Table~\ref{tab:distill}).
+\textbf{R-Drop} was also explored: it adds a symmetric KL consistency penalty between two independent stochastic forward passes,
+\[
+\mathcal{L}_{\mathrm{R\text{-}Drop}}
+= \tfrac{1}{2}\bigl(\mathcal{L}_{\mathrm{KD}}(\mathbf{z}_1)
+                   +\mathcal{L}_{\mathrm{KD}}(\mathbf{z}_2)\bigr)
++ \lambda\cdot\tfrac{1}{2}
+  \bigl[\mathrm{KL}(p_1\|p_2)+\mathrm{KL}(p_2\|p_1)\bigr].
+\]
+
+\begin{table}[H]
+\centering
+\caption{Knowledge distillation variants}
+\label{tab:distill}
+\begin{tabular}{lcc}
+\hline
+\textbf{Tag} & \textbf{Epochs} & \textbf{R-Drop} \\
+\hline
+\texttt{finbert\_distilled\_10ep}   & 10 & --     \\
+\texttt{finbert\_distilled\_12ep}   & 12 & --     \\
+\texttt{finbert\_distilled\_rdrop}  & 12 & $\checkmark$  \\
+\hline
+\end{tabular}
+\end{table}
+
+
+% ── 6. Evaluation and Analysis
+% ───────────────────────────────────
+\section{Evaluation and Analysis}
+\label{sec:results}
+All classification approaches are evaluated under a single consistent protocol. The four required metrics (Accuracy, Precision, Recall, and macro-averaged F1) are reported across all model families, with macro-F1 as the primary metric throughout. Because the corpus is heavily imbalanced, macro-averaging weights all three classes equally, penalising models that achieve high accuracy by concentrating capacity on the Neutral majority at the expense of the financially meaningful Bearish and Bullish signals. Every reported score is a leakage-free OOF estimate: 10-fold for all transformer-based models and 5-fold for GPT-2, with each prediction generated by a model that never trained on that sample.
+
+
+\subsection{Performance Landscape}
+
+The full ranking of approaches is shown in Figure~\ref{fig:ladder}. The progression from the majority-class baseline to the final ensemble spans nearly 66 percentage points in macro-F1, with each modelling stage adding a qualitatively distinct form of linguistic information:
+
+
+\begin{table}[H]
+  \centering\footnotesize\setlength{\tabcolsep}{5pt}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r r r@{}}
     \toprule
     \tH{Model} & \tH{F1$_{\text{mac}}$} & \tH{$\sigma$} & \tH{Acc.} & \tH{Prec.} & \tH{Rec.} \\
     \gmid
-    Ensemble, 8 encoders, optimised weights \emph{(extra)} & 0.9201 & --- & 0.9357 & 0.9097 & 0.9315 \\
-    \rowcolor{lightgray} Distilled FinBERT student \textbar{} \textbf{submitted} & \textbf{\distf} & 0.0093 & \distacc & 0.9032 & 0.9258 \\
-    FinBERT-fintwitter 10ep + fix\_text                 & 0.9082 & 0.0098 & 0.9293 & 0.9008 & 0.9163 \\
-    FinBERT-fintwitter 7ep + LLRD                       & 0.9080 & 0.0099 & 0.9285 & 0.8967 & 0.9206 \\
-    Twitter-RoBERTa-large topic-sent.\ (prev.\ subm.)   & 0.8943 & 0.0100 & 0.9141 & 0.8857 & 0.9036 \\
-    DeBERTa-v3-large 6ep + fix\_text                    & 0.8889 & 0.0121 & 0.9107 & 0.8835 & 0.8945 \\
-    Stacking-6 \textbar{} +fine-tuned \emph{(extra)}    & 0.8483 & 0.0073 & 0.8771 & 0.8271 & 0.8757 \\
-    LightGBM Optuna + RoBERTa embeddings (best classical) & 0.8021 & --- & --- & --- & --- \\
-    LightGBM + SBERT + SMOTE (Chawla et al., 2002)      & 0.7993 & --- & --- & --- & --- \\
-    GPT-2 decoder fine-tuned \emph{(extra)}             & 0.7724 & 0.0159 & 0.8125 & 0.7475 & 0.8171 \\
+    \rowcolor{lightgray}\textbf{Ensemble, 8 encoders, coord.-ascent weights} & \textbf{0.9201} & - & \textbf{0.9357} & \textbf{0.9097} & \textbf{0.9315} \\
+    KD student, FinBERT 12\,ep \emph{(extra)}    & 0.9139 & 0.0093 & 0.9334 & 0.9032 & 0.9258 \\
+    FinBERT-fintwitter 10\,ep + fix\_text         & 0.9082 & 0.0098 & 0.9293 & 0.9008 & 0.9163 \\
+    FinBERT-fintwitter 7\,ep + LLRD               & 0.9080 & 0.0099 & 0.9285 & 0.8967 & 0.9206 \\
+    Twitter-RoBERTa-large-ts (prev.\ subm.)       & 0.8943 & 0.0100 & 0.9141 & 0.8857 & 0.9036 \\
+    DeBERTa-v3-large 6\,ep + fix\_text            & 0.8889 & 0.0121 & 0.9107 & 0.8835 & 0.8945 \\
+    Stacking-6 + fine-tuned \emph{(extra)}        & 0.8483 & 0.0073 & 0.8771 & 0.8271 & 0.8757 \\
+    LightGBM Optuna + RoBERTa \emph{(best classical)} & 0.8021 & - & - & - & - \\
+    GPT-2 decoder fine-tuned \emph{(extra)}       & 0.7724 & 0.0159 & 0.8125 & 0.7475 & 0.8171 \\
     \bottomrule
   \end{tabularx}
-  \caption{Top models by OOF macro-F1 (transformers: 10-fold; classical/stacking: 5-fold). The
-  shaded row is the \textbf{submitted} single model; rows marked \emph{(extra)} are extra work.
-  SMOTE improves the dense-embedding classical baseline by +0.6pp over class weighting but is
-  irrelevant at transformer level, where the class-weighted loss already handles imbalance.}
+  \caption{Full model comparison under the common OOF protocol (transformers: 10-fold;
+  classical / stacking / GPT-2: 5-fold). \textbf{Shaded row} is the \textbf{submitted model}.}
   \label{tab:results}
 \end{table}
 
-\textbf{Key findings:} (1) dense transformer embeddings outperform sparse TF--IDF and static
-embeddings across all model families; (2) end-to-end fine-tuning breaks the $\sim$0.80
-frozen-embedding plateau; (3) within fine-tuning, \emph{domain match beats parameter count} ---
-a 110M FinBERT beats a 435M DeBERTa-v3-large by $\sim$2pp; (4) text repair (fix\_text) is a free
-+0.26pp; (5) ensemble knowledge survives compression into a single student model.
+\textbf{Key findings:}
+(1)~Dense transformer embeddings dominate sparse TF--IDF and static embeddings across
+all classifier families.
+(2)~End-to-end fine-tuning breaks the $\sim$0.80 frozen-embedding ceiling.
+(3)~Within fine-tuning, \emph{domain match beats parameter count}: 110\,M FinBERT-fintwitter
+outperforms 435\,M DeBERTa-v3-large by $\sim$2\,pp.
+(4)~Coordinate-ascent ensemble weights add +0.57\,pp over uniform soft-averaging,
+confirming that heterogeneous architectures contribute differently.
+(5)~Knowledge distillation retains 48\,\% of the ensemble gain in a single 110\,M model. The best distilled student (\texttt{finbert\_distilled\_12ep}, OOF macro-F1 = \kdF{}) sits
+only 0.62\,pp below the ensemble teacher (0.9201) while surpassing the best standalone
+encoder by +0.57\,pp -- all within the same 110\,M-parameter backbone. R-Drop did not
+yield further improvement, suggesting the soft-target signal from the ensemble teacher
+already provides sufficient regularisation. This cost--accuracy trade-off is visible in
+Figure~\ref{fig:ladder}: the KD student bar sits between the best single encoder and the
+ensemble, capturing most of the gain at single-model inference cost. The overall F1 progression from majority-class baseline to the final ensemble is depicted
+in Figure~\ref{fig:ladder} (Appendix~\ref{app:eval-figures}).
+
+\subsection{Classical ML Models}
+Across the 68 evaluated combinations, tree-based models on frozen contextual embeddings form the performance frontier, with LightGBM (Optuna-tuned, 678 estimators) on frozen RoBERTa embeddings reaching OOF macro-F1 = 0.8021 (Figure~\ref{fig:classical-ml}). This result defines the ceiling for non-neural methods and is not exceeded by any classical configuration regardless of algorithm or feature choice.
+
+Two overfitting patterns are evident. Tree ensembles (LightGBM, XGBoost, Random Forest) show train/val gaps of 0.18 to 0.25: the frozen features are not expressive enough to support the generalisation that these high-capacity models require. Linear models (Logistic Regression, LinearSVC) generalise cleanly with near-zero overfitting gaps, confirming that the task is largely linearly separable in the frozen encoder feature space. Sparse models top out at approximately 0.74, with the best result being a Logistic Regression with Optuna-tuned C on TF-IDF bigrams (F1 = 0.7365).
+
+
+\subsection{Encoder Analysis}
+
+\textbf{Encoder comparison:} Table~\ref{tab:backbones} reports all nine backbone
+configurations under the identical 10-fold OOF protocol; Figure~\ref{fig:encoders} (Appendix~\ref{app:eval-figures}) summarises
+Phase~1 screening against Phase~2 tuning results visually. The decisive observation is
+that \emph{domain pre-training dominates architecture size}: every FinBERT-fintwitter
+variant outperforms the $4\times$ larger DeBERTa-v3-large despite having only 110\,M
+parameters. Text repair (\texttt{fix\_text}) contributes a free $+0.26$\,pp. LLRD reaches
+the same F1 as vanilla fine-tuning (0.9080) but with different per-layer update dynamics,
+making it a complementary contributor when the models are combined.
+
+\begin{table}[H]
+  \centering\footnotesize\setlength{\tabcolsep}{5pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r r@{}}
+    \toprule
+    \tH{Backbone (fine-tuned end-to-end, 10-fold)} & \tH{Params} & \tH{OOF F1} & \tH{$\sigma$} & \tH{Acc.} \\
+    \gmid
+    \rowcolor{lightgray}\textbf{FinBERT-fintwitter, 10\,ep + fix\_text} & 110M & \textbf{0.9082} & 0.0098 & 0.9293 \\
+    FinBERT-fintwitter, 7\,ep + LLRD 0.9   & 110M & 0.9080 & 0.0099 & 0.9285 \\
+    FinBERT-fintwitter, 10\,ep (raw text)   & 110M & 0.9056 & 0.0113 & 0.9275 \\
+    FinBERT-fintwitter, 7\,ep              & 110M & 0.9049 & 0.0101 & 0.9264 \\
+    FinBERT-fintwitter, 5\,ep              & 110M & 0.9025 & 0.0110 & 0.9243 \\
+    Twitter-RoBERTa-large (prev.\ subm.)   & 355M & 0.8943 & 0.0100 & 0.9141 \\
+    DeBERTa-v3-large, 6\,ep + fix\_text$^\dagger$ & 435M & 0.8889 & 0.0121 & 0.9107 \\
+    DeBERTa-v3-large, 6\,ep               & 435M & 0.8882 & 0.0124 & 0.9100 \\
+    DeBERTa-v3-base-finance, 8\,ep + fix\_text & 184M & 0.8715 & 0.0128 & 0.8947 \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Transformer backbone search (10-fold OOF, seed 42). Shaded row is the best individual
+  encoder and the distillation student. $^\dagger$DeBERTa-v3-large requires fp32 master weights
+  with loss scaling to prevent overflow of its disentangled attention in plain fp16.}
+  \label{tab:backbones}
+\end{table}
+
+\subsection{Ensemble Analysis}
+
+\textbf{Ensemble strategy comparison:} Table~\ref{tab:ensemble} traces the evolution
+of ensemble strategies from the earliest frozen-embedding experiments to the final
+coordinate-ascent weighted soft-vote. Coordinate-ascent weights add $+0.57$\,pp over
+uniform soft-averaging and $+0.33$\,pp over stacking, confirming that heterogeneous
+architectures contribute at different rates and benefit from differential weighting.
+
+\begin{table}[H]
+  \centering\footnotesize\setlength{\tabcolsep}{4pt}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r r r@{}}
+    \toprule
+    \tH{Stage} & \tH{Method} & \tH{Models} & \tH{OOF F1} \\
+    \gmid
+    Historical (frozen only, Phase 1)  & Stacking LR       & 5 & 0.8269 \\
+    Historical (frozen only, Phase 1)  & Soft-avg equal    & 5 & 0.8265 \\
+    Historical (mixed, Phase 2)        & Stacking LR       & 6 & 0.8483 \\
+    Historical (mixed, Phase 2)        & Soft-avg equal    & 6 & 0.8412 \\
+    Fine-tuned only (main)             & Soft-avg equal    & 6 & 0.9141 \\
+    Fine-tuned only (main)             & Soft-avg weighted & 8 & 0.9184 \\
+    Fine-tuned only (main)             & Stacking LR (5-f) & 5 & 0.9168 \\
+    \rowcolor{lightgray}Fine-tuned only (main) & \textbf{Coord.-ascent weights} & \textbf{8} & \textbf{0.9201} \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Ensemble strategy progression. ``Historical'' refers to experiments conducted
+  before all encoders were tuned to 10 folds; those rows are included for transparency.
+  The shaded row is the \textbf{submitted model}.}
+  \label{tab:ensemble}
+\end{table}
+
+\textbf{Ensemble diversity (Figure~\ref{fig:diversity}, Appendix~\ref{app:eval-figures}):} Pairwise Cohen's $\kappa$ between
+the eight ensemble members ranges from 0.809 to 0.976 (mean 0.861): agreement is high
+within the FinBERT cluster but meaningfully lower between FinBERT and DeBERTa architectures
+- precisely the complementarity the weighting scheme exploits. The error-overlap histogram
+(right panel) reveals that 7{,}723 of 9{,}543 samples (80.9\,\%) are correctly classified by
+all eight models; a further \textbf{1{,}206} samples have at least one individual-model
+error that the weighted vote corrects; and only \textbf{185 samples} (1.9\,\%) are
+misclassified by every model simultaneously - these constitute the irreducible hard
+errors discussed in Section~\ref{sec:error}.
+
+
+\subsection{Final Model: Ensemble Evaluation}
+
+The submitted ensemble achieves per-class F1 of
+\textbf{0.895} (Bearish), \textbf{0.912} (Bullish) and \textbf{0.953} (Neutral),
+with accuracy \ensAcc. Figure~\ref{fig:cm-ensemble} (Appendix~\ref{app:eval-figures}) shows the confusion matrix.
+Neutral achieves the highest precision (0.967), reflecting that the dominant class
+receives the most training signal. Bullish achieves strong recall (0.934): explicit
+analyst-action language (\emph{upgraded, beats, raises target}) provides unambiguous
+lexical anchors. Bearish is the hardest class: negative intent is often expressed
+through implicit cues (\emph{guidance revised}, \emph{bookings weakness}) rather than
+explicit sentiment words, and it is also the rarest class (15.1\,\%).
+
+\textbf{ROC and confidence analysis (Figure~\ref{fig:roc}, Appendix~\ref{app:eval-figures}).} One-vs-rest ROC curves yield
+AUC\,>\,0.98 for all three classes (Bearish: 0.989, Bullish: 0.990, Neutral: 0.984),
+confirming that the ensemble produces well-discriminating probability estimates - a
+prerequisite for threshold-based downstream applications such as trading signal generation.
+The confidence distribution (right panel) reveals a decisive separation: correctly
+classified samples carry mean confidence 0.890, while misclassified samples cluster at
+a mean of 0.676. Only \textbf{77 samples} (0.81\,\%) combine high confidence ($>0.90$)
+with a wrong prediction - the model is reliably uncertain about its mistakes.
+
+\subsection{Statistical Validation}
+\label{sec:stats}
+With ten fold-level scores, fold-wise tests have low power: a Wilcoxon signed-rank test
+between the two best individual encoders does not reach significance ($p = 0.065$). We
+complement it with \emph{paired bootstrap} over the 9{,}543 OOF predictions (1{,}000
+resamples, Figure~\ref{fig:bootstrap} in Appendix~\ref{app:eval-figures}):
+\begin{itemize}
+  \item Ensemble vs.\ best individual encoder: 95\% CI $[{+0.0066},{+0.0172}]$ -
+    \textbf{significant}; the gain is real, not resampling noise.
+  \item KD student vs.\ best plain encoder: $[{+0.0023},{+0.0094}]$ - \textbf{significant}.
+  \item Ensemble vs.\ KD student: $[{+0.0018},{+0.0120}]$ - \textbf{significant}.
+  \item Best vs.\ second-best individual encoder: $[-0.0010,{+0.0073}]$ -
+    \emph{not} significant, confirming single-encoder differences are within noise and that
+    ensemble/distillation gains are the real levers.
+\end{itemize}
+
+Finally, a temperature-scaling search on OOF probabilities finds $T = 1.0$ optimal for
+every fine-tuned model: training with label smoothing (0.05) already yields well-calibrated
+probabilities (confidence-bucket accuracy matches predicted confidence within $\pm$3\,pp
+above 0.8), so no post-hoc calibration is applied to the submission.
 
 \subsection{Error Analysis}
-Figure~\ref{fig:cm} shows the confusion matrix of the submitted model. Per class it reaches F1 of
-\textbf{0.871} (Bearish), \textbf{0.917} (Bullish) and \textbf{0.954} (Neutral). Errors concentrate
-exactly where the EDA predicted (Section~2.4): the Neutral/directional boundary. Neutral tweets
-drift into Bullish/Bearish when they report factual but direction-laden news (``price target
-raised''), and directional tweets get softened into Neutral when the polarity is implicit. Bearish
-remains the hardest class --- it is both the smallest (15.1\%) and the most mojibake-affected after
-Neutral. On the held-out test set the model predicts 390 Bearish, 492 Bullish and 1{,}506 Neutral
-(of 2{,}388) --- close to the training prior. Part of the residual error is the \emph{labels}, not
-the model: the eight-encoder ensemble contradicts the gold label with $\geq$95\% confidence on
-0.48\% of training tweets (e.g.\ ``Baird returns to Wingstop \emph{bull camp}'' is labelled
-Neutral), a lower bound on annotation noise that no classifier can overcome. Three qualitative
-failure modes remain: irony/sarcasm, mixed-signal tweets (`beats EPS but misses revenue'), and
-truncated tweets whose decisive token was cut off --- the ceiling for text-only models on this
-corpus.
+\label{sec:error}
+Of 9{,}543 training samples, the ensemble misclassifies \textbf{868} (9.1\,\%),
+concentrated at three linguistic boundaries: \textbf{Neutral\,$\to$\,Bearish/Bullish}
+(factual news with implicit direction, e.g.\ ``Q3 revenue $-$3\,\% YoY'') and
+\textbf{Bearish/Bullish\,$\to$\,Neutral} (hedged or softened directional language).
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.96\linewidth]{confusion_matrix_distilled.pdf}
-  \caption{Confusion matrix of the submitted distilled FinBERT (normalised left, absolute counts
-  right), from 10-fold out-of-fold predictions.}
-  \label{fig:cm}
-\end{figure}
+Figure~\ref{fig:tfidf-coeffs} (Appendix~\ref{app:eval-figures}) shows the most discriminative surface tokens per class as
+recovered by Logistic Regression on TF--IDF 1--2\,grams. Bearish tokens (\emph{down,
+lower, downgraded, misses, falls, cuts, sues}) and Bullish tokens (\emph{up, higher,
+rises, beats, bullish, positive, strong}) are clear directional anchors; Neutral tokens
+are dominated by reporting verbs and stock-screener URLs. These lexical patterns explain
+why TF--IDF\,+\,LR already reaches 0.737: a large fraction of financial tweets carry
+explicit directional vocabulary. Residual errors are precisely those tweets that fall
+outside this vocabulary - implicit sentiment requiring contextual inference, which only
+fine-tuned transformers can resolve.
 
-\subsection{Statistical Significance and Calibration}
-With only ten fold-level scores, fold-wise tests have low power: a Wilcoxon signed-rank test
-between the two best individual encoders does not reach significance ($p=0.065$). We therefore
-complement it with \emph{paired bootstrap} over the 9{,}543 OOF predictions (1{,}000 resamples),
-which compares models on identical samples:
+Error-rate analysis by tweet characteristics (\ref{fig:error-analysis}) reveals:
 \begin{itemize}
-  \item ensemble vs.\ best individual encoder: $\Delta$F1 95\% CI $=[+0.0066, +0.0172]$ --- significant;
-  \item distilled student vs.\ best plain encoder: $[+0.0023, +0.0094]$ --- significant;
-  \item best vs.\ second-best individual encoder: $[-0.0010, +0.0073]$ --- \emph{not} significant,
-  confirming that single-encoder differences are within noise and the ensemble/distillation gains
-  are the real levers.
+  \item \tH{Short tweets ($\leq$5 words)} have the highest error rate: insufficient
+    context for both n-gram and transformer models.
+  \item \tH{Implicit sentiment} (no explicit polarity keyword such as \emph{upgraded}
+    or \emph{plunges}) approximately doubles the error rate across all three classes:
+    the model must infer stance from structure and co-occurrence alone.
+  \item \tH{Negation} (\emph{not, no, miss, below}) raises the Bearish error rate:
+    scope-of-negation is partially captured by fine-tuned encoders but remains
+    a residual failure mode.
+  \item Tweets \tH{with cashtags} do not differ significantly in error rate from
+    those without: the ticker symbol provides no sentiment signal.
 \end{itemize}
-Finally, a temperature-scaling search on the OOF probabilities finds $T{=}1.0$ optimal for every
-fine-tuned model: training with label smoothing (0.05) already yields well-calibrated
-probabilities (confidence-bucket accuracy matches predicted confidence within $\pm$3pp above 0.8),
-so no post-hoc calibration is applied to the submission.
+
+Three qualitative error types remain irreducible: \emph{irony/sarcasm} (rare but
+systematic), \emph{mixed-signal tweets} (``beats EPS but misses revenue''),
+and \emph{truncated tweets} whose decisive sentiment token was cut by the character limit.
+
+\subsection{Distribution Shift and Label Noise}
+An adversarial train/test classifier (trained to distinguish the two splits) achieves
+AUC\,=\,0.486, establishing that no distribution shift exists between training and test
+conditions: OOF estimates are unbiased proxies for held-out performance.
+
+Part of the residual 9.1\,\% error is the \emph{labels, not the model}: at prediction
+confidence $\geq$0.95, the ensemble disagrees with the gold label on \textbf{46 samples}
+(0.48\,\% of the corpus) - a lower bound on annotation noise that no classifier
+can overcome. Representative examples: ``Baird returns to Wingstop \emph{bull camp}''
+(labelled Neutral), ``target price cut from \$18 to \$17 but remains Buy'' (labelled Bearish).
+The ensemble is therefore operating near the \emph{empirical learning ceiling} for this
+corpus and annotation scheme.
+
 
 % ── 7. Agentic Workflow ──────────────────────────────────────────
-\section{Extra Challenge 2 --- Agentic Workflow (+1.50 pts)}
+\section{Extra Challenge 2 - Agentic Workflow (+1.50 pts)}
 We implement a conversational agent that orchestrates three classifiers with \emph{non-trivial},
 adaptive routing. The implementation lives in \nolinkurl{src/agent.py} and
 \nolinkurl{notebooks/08_Agentic_Workflow.ipynb}. Following the course guideline on model choice,
@@ -619,14 +972,14 @@ LLMs in the ReAct style (Yao et al., 2022). The notebook includes both a scripte
 free-form phrases to the agent.
 
 \subsection{Architecture and Routing}
-The agent exposes three tools of escalating cost --- \tH{VADER} (lexical baseline,
+The agent exposes three tools of escalating cost - \tH{VADER} (lexical baseline,
 $\sim$0.1\,ms), \tH{LightGBM+SBERT} (ML model trained in this project, $\sim$25\,ms) and
 \tH{FinBERT-fintwitter} (the \emph{same domain backbone our submission fine-tunes}, used
-zero-shot as the expert, $\sim$150\,ms) --- and routes adaptively:
+zero-shot as the expert, $\sim$150\,ms) - and routes adaptively:
 \begin{itemize}
   \item VADER gives a quick lexical reading; if $|\text{compound}| > \tau$ it is trusted directly.
   The threshold $\tau$ is \emph{calibrated on data}, not hand-picked: a sweep on 400 held-out
-  tweets finds the optimum at $\tau{=}0.85$ --- effectively discovering that the lexical tool
+  tweets finds the optimum at $\tau{=}0.85$ - effectively discovering that the lexical tool
   should act as a cross-check rather than a decider, consistent with the VADER analysis of
   Section~2.4.
   \item Otherwise LightGBM+SBERT is consulted; if it agrees with VADER, that is the verdict.
@@ -639,7 +992,7 @@ Evaluation is \emph{leakage-aware}: the agent's LightGBM tool is retrained on 80
 and the agent is calibrated and evaluated only on the held-out 20\% (the public expert checkpoint
 saw the train split, which we disclose; routing shares and latency are unaffected). On 400
 held-out tweets the agent reaches accuracy 0.873 (macro-F1 0.833), resolving 44\% of tweets with
-cheap tools and cutting mean latency by 18\% versus always calling the expert (0.915) --- the
+cheap tools and cutting mean latency by 18\% versus always calling the expert (0.915) - the
 quantified cost/accuracy trade-off that motivates agentic routing. The submitted distilled model
 remains the accuracy reference; the agent demonstrates \emph{orchestration under a cost budget},
 is deterministic, and is reproducible for the oral defence without any API key.
@@ -647,12 +1000,12 @@ is deterministic, and is reproducible for the oral defence without any API key.
 % ── 8. Conclusion ────────────────────────────────────────────────
 \section{Conclusion}
 This work delivers a complete NLP pipeline for financial tweet sentiment classification. Our
-\textbf{submitted single-model solution} --- one FinBERT encoder trained by \textbf{knowledge
-distillation} from an eight-encoder ensemble teacher --- achieves an out-of-fold macro-F1 of
+\textbf{submitted single-model solution} - one FinBERT encoder trained by \textbf{knowledge
+distillation} from an eight-encoder ensemble teacher - achieves an out-of-fold macro-F1 of
 \textbf{\distf} (accuracy \distacc), a \textbf{+0.112} gain over the 0.8021 classical baseline,
 while remaining a single 110M-parameter classifier. Key contributions: (1) a text-quality audit
 showing the corpus is corrupted at source, and a repair step (\texttt{ftfy} fix\_text) worth
-+0.26pp at transformer level --- whereas \emph{destructive} preprocessing consistently hurts;
++0.26pp at transformer level - whereas \emph{destructive} preprocessing consistently hurts;
 (2) systematic evaluation of 11 feature representations and 12 model families under a common
 seeded protocol; (3) a nine-configuration transformer backbone search showing that
 \emph{domain-matched pre-training beats parameter count} (110M FinBERT $>$ 435M DeBERTa-v3-large
@@ -663,81 +1016,218 @@ small decoder collapses to the majority class; (6, extra) an explainable, reprod
 workflow. Future work could explore label-noise auditing of the Neutral boundary, domain-adaptive
 pre-training on a larger financial-tweet corpus, and QLoRA fine-tuning of decoder LLMs.
 
-% ── References ───────────────────────────────────────────────────
-\section*{References}
-{\small
-Akiba, T., Sano, S., Yanase, T., Ohta, T., \& Koyama, M. (2019). Optuna: A next-generation
-hyperparameter optimization framework. \emph{KDD 2019}.
 
-Alammar, J., \& Grootendorst, M. (2024). \emph{Hands-On Large Language Models: Language
-Understanding and Generation}. O'Reilly Media. [Course textbook.]
 
-Antweiler, W., \& Frank, M. Z. (2004). Is all that talk just noise? The information content of
-internet stock message boards. \emph{Journal of Finance}, 59(3), 1259--1294.
+\bibliographystyle{plain}   % ou apalike, ieeetr, etc.
+\bibliography{references}
 
-Araci, D. (2019). FinBERT: Financial sentiment analysis with pre-trained language models.
-\emph{arXiv:1908.10063}.
+% ===========================================================================
+% APPENDIX -- Data Exploration Figures
+% Place near the end of the document, after \appendix
+% ===========================================================================
+\appendix
+\section{Data Exploration Figures}
+\label{app:eda-figures}
 
-Barbieri, F., Camacho-Collados, J., Espinosa Anke, L., \& Neves, L. (2020). TweetEval: Unified
-benchmark and comparative evaluation for tweet classification. \emph{EMNLP-Findings 2020}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure1.png}
+  \caption{Class distribution of the training set (Bearish 15.1\%, Bullish 20.2\%,
+  Neutral 64.7\%).}
+  \label{fig:classdist}
+\end{figure}
 
-Bollen, J., Mao, H., \& Zeng, X. J. (2011). Twitter mood predicts the stock market. \emph{Journal of
-Computational Science}, 2(1), 1--8.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure2.png}
+  \caption{Tweet length distributions by class (word count). All three classes share
+  nearly identical profiles.}
+  \label{fig:lengthdist}
+\end{figure}
 
-Brown, T. B., et al. (2020). Language models are few-shot learners. \emph{NeurIPS 2020}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure3.png}
+  \caption{Structural feature density per class: cashtags, hashtags, mentions and URLs.}
+  \label{fig:structural}
+\end{figure}
 
-Chawla, N. V., Bowyer, K. W., Hall, L. O., \& Kegelmeyer, W. P. (2002). SMOTE: Synthetic minority
-over-sampling technique. \emph{JAIR}, 16, 321--357.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure4.png}
+  \caption{Cashtag frequency distribution across the training corpus (long-tailed).}
+  \label{fig:cashtagfreq}
+\end{figure}
 
-Devlin, J., Chang, M.-W., Lee, K., \& Toutanova, K. (2019). BERT: Pre-training of deep
-bidirectional transformers for language understanding. \emph{NAACL-HLT 2019}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure5.png}
+  \caption{Sentiment breakdown by cashtag. Most tickers are dominated by a single
+  sentiment class.}
+  \label{fig:cashtagsentiment}
+\end{figure}
 
-Go, A., Bhayani, R., \& Huang, L. (2009). Twitter sentiment classification using distant
-supervision. \emph{Stanford CS224N Report}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure6.png}
+  \caption{Word clouds by class. Bearish: downgrade language; Bullish: positive analyst
+  actions; Neutral: reporting verbs without directional framing.}
+  \label{fig:wordclouds}
+\end{figure}
 
-Hinton, G., Vinyals, O., \& Dean, J. (2015). Distilling the knowledge in a neural network.
-\emph{arXiv:1503.02531}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure7.png}
+  \caption{Top bigrams and trigrams by class. Phrase-level patterns carry cleaner
+  sentiment signal than unigrams.}
+  \label{fig:ngrams}
+\end{figure}
 
-He, P., Gao, J., \& Chen, W. (2021). DeBERTaV3: Improving DeBERTa using ELECTRA-style pre-training
-with gradient-disentangled embedding sharing. \emph{arXiv:2111.09543}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure8.png}
+  \caption{Mean TF-IDF scores for the most discriminative terms per class.}
+  \label{fig:tfidf}
+\end{figure}
 
-Hutto, C. J., \& Gilbert, E. (2014). VADER: A parsimonious rule-based model for sentiment analysis
-of social media text. \emph{ICWSM 2014}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure9.png}
+  \caption{Venn diagram of top vocabulary overlap across classes. Roughly half of the
+  most frequent terms are shared, confirming that context -- not lexicon -- is the key
+  discriminator.}
+  \label{fig:venn}
+\end{figure}
 
-Loureiro, D., Barbieri, F., Neves, L., Espinosa Anke, L., \& Camacho-Collados, J. (2022). TimeLMs:
-Diachronic language models from Twitter. \emph{ACL 2022 (System Demonstrations); arXiv:2202.03829}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure10.png}
+  \caption{VADER classification results vs.\ ground truth. Accuracy of 48\% falls well
+  below the 64.7\% majority-class baseline.}
+  \label{fig:vader}
+\end{figure}
 
-Manning, C. D., Raghavan, P., \& Sch\"utze, H. (2008). \emph{Introduction to Information Retrieval}.
-Cambridge University Press.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures_eda/figure11.png}
+  \caption{Training vs.\ test distribution comparison (character length and word count).
+  Kolmogorov--Smirnov $p$-values confirm no statistically significant distributional
+  shift.}
+  \label{fig:distribshift}
+\end{figure}
 
-Mikolov, T., Chen, K., Corrado, G., \& Dean, J. (2013). Efficient estimation of word representations
-in vector space. \emph{arXiv:1301.3781}.
+% ===========================================================================
+% APPENDIX -- Data Preprocessing Figures
+% Place near the end of the document, in the appendix
+% ===========================================================================
+\section{Data Preprocessing Figures}
+\label{app:preproc-figures}
 
-Pennington, J., Socher, R., \& Manning, C. D. (2014). GloVe: Global vectors for word representation.
-\emph{EMNLP 2014}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.86\linewidth]{figure_datapreproc/figure1.png}
+  \caption{Token count across preprocessing stages and vocabulary reduction by class.}
+  \label{fig:vocabreduction}
+\end{figure}
 
-Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., \& Sutskever, I. (2019). Language models are
-unsupervised multitask learners. \emph{OpenAI Blog}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.86\linewidth]{figure_datapreproc/figure2.png}
+  \caption{Preprocessing Ablation Study: macro-F1 by configuration.}
+  \label{fig:ablation}
+\end{figure}
 
-Reimers, N., \& Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks.
-\emph{EMNLP 2019}.
 
-Rennie, J. D., Shih, L., Teevan, J., \& Karger, D. (2003). Tackling the poor assumptions of Naive
-Bayes text classifiers. \emph{ICML 2003}.
 
-Sebastiani, F. (2002). Machine learning in automated text categorization. \emph{ACM Computing
-Surveys}, 34(1), 1--47.
 
-Speer, R. (2019). ftfy: Fixes text for you (Version 5.5). \emph{Zenodo}.
-\texttt{doi:10.5281/zenodo.2591652}.
+% ── Appendix C: Evaluation and Analysis Figures ─────────────────
+\clearpage
+\section{Evaluation and Analysis Figures}
+\label{app:eval-figures}
 
-Wolpert, D. H. (1992). Stacked generalization. \emph{Neural Networks}, 5(2), 241--259.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig1.png}
+  \caption{Performance progression from majority-class baseline to the final ensemble.
+  Each bar represents a model family's OOF macro-F1; dashed lines mark the fine-tuning
+  threshold and the ensemble gain.}
+  \label{fig:ladder}
+\end{figure}
 
-Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K., \& Cao, Y. (2022). ReAct:
-Synergizing reasoning and acting in language models. \emph{arXiv:2210.03629}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig2.png}
+  \caption{Classical ML models: validation macro-F1 versus overfitting gap (train F1 $-$ val F1)
+  by algorithm family. Points in the upper-left are ideal (high performance, low overfitting).}
+  \label{fig:classical-ml}
+\end{figure}
 
-Zhao, T. Z., Wallace, E., Feng, S., Klein, D., \& Singh, S. (2021). Calibrate before use: Improving
-few-shot performance of language models. \emph{ICML 2021}.
-}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig3.png}
+  \caption{Top 15 discriminative tokens per class recovered by Logistic Regression on
+  TF-IDF 1--2-grams (LR coefficients). Bearish anchors on downgrade language, Bullish
+  on upgrade language, Neutral on reporting verbs and screener URLs.}
+  \label{fig:tfidf-coeffs}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig4.png}
+  \caption{Encoder backbone comparison. \textbf{Left:} Phase~1 lightweight 5-fold screening
+  of seven candidate architectures. \textbf{Right:} Phase~2 full 10-fold tuning of the
+  eight selected configurations; green bars are ensemble members, orange is tuned-but-excluded.}
+  \label{fig:encoders}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig7.png}
+  \caption{Ensemble member diversity analysis. \textbf{Left:} pairwise Cohen's $\kappa$ heatmap
+  across the eight fine-tuned encoders (range 0.809--0.976, mean 0.861); lower agreement
+  between FinBERT and DeBERTa architectures provides useful complementarity.
+  \textbf{Right:} error-overlap histogram -7{,}723 samples (80.9\,\%) are correct for
+  all eight models; 1{,}206 errors are corrected by the weighted vote; 185 samples (1.9\,\%)
+  are wrong for every member simultaneously.}
+  \label{fig:diversity}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\linewidth]{fig_section6/fig8.png}
+  \caption{Confusion matrix of the final submitted ensemble (8 encoders, coordinate-ascent
+  weights; 10-fold OOF, macro-F1 = 0.9201). \textbf{Left:} normalised by true class (recall
+  per class). \textbf{Right:} absolute counts.}
+  \label{fig:cm-ensemble}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{fig_section6/fig10.png}
+  \caption{Final ensemble evaluation. \textbf{Left:} one-vs-rest ROC curves for all three
+  classes (AUC $>$ 0.98 for all). \textbf{Right:} prediction confidence distribution;
+  correctly classified samples cluster near 1.0 (mean 0.889) while misclassified samples
+  spread across lower confidence values (mean 0.676).}
+  \label{fig:roc}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\linewidth]{fig_section6/fig11.png}
+  \caption{Paired bootstrap 95\,\% confidence intervals for pairwise $\Delta$F1-macro
+  (1{,}000 resamples over 9{,}543 OOF predictions). All comparisons involving the ensemble
+  or KD student exclude zero; the best-vs-second-best single-encoder interval straddles
+  zero, confirming that individual-encoder differences are within noise.}
+  \label{fig:bootstrap}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_section6/error-analysis.png}
+    \caption{Error analysis by tweet characteristics for the final ensemble.}
+    \label{fig:error-analysis}
+\end{figure}
+
 
 \end{document}
