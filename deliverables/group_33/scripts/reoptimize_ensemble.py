@@ -21,6 +21,7 @@ from sklearn.metrics import f1_score
 BASE = Path(__file__).resolve().parent.parent
 PRED = BASE / "results" / "predictions"
 TAB = BASE / "results" / "tables"
+TAB.mkdir(parents=True, exist_ok=True)
 
 train = pd.read_csv(BASE / "data" / "raw" / "train.csv")
 y = train["label"].to_numpy()
@@ -63,12 +64,20 @@ def ens_f1(weights: dict) -> float:
     return f1_score(y, (s / tw).argmax(1), average="macro")
 
 
-# initialise from current optimum; new models start at 0
-cur = json.loads((TAB / "ensemble_optimal_result.json").read_text())
+# initialise from current optimum when it exists; otherwise optimise from scratch
+ensemble_path = TAB / "ensemble_optimal_result.json"
+if ensemble_path.exists():
+    cur = json.loads(ensemble_path.read_text(encoding="utf-8"))
+else:
+    cur = {"oof_f1_macro": 0.0, "models": {}}
 weights = {t: 0.0 for t in oofs}
 weights.update({t: w for t, w in cur["models"].items() if t in oofs})
 best_f1 = ens_f1(weights)
-print(f"\nPonto de partida: {best_f1:.4f}  (config actual)")
+if best_f1 == 0.0 and oofs:
+    first = max(oofs, key=lambda tag: f1_score(y, oofs[tag].argmax(1), average="macro"))
+    weights[first] = 1.0
+    best_f1 = ens_f1(weights)
+print(f"\nPonto de partida: {best_f1:.4f}")
 
 improved = True
 passes = 0
@@ -96,14 +105,14 @@ print(f"\nMelhor configuracao ({len(final)} modelos): OOF F1-macro = {best_f1:.4
 for t, w in sorted(final.items(), key=lambda x: -x[1]):
     print(f"  w={w:<5} {t}")
 
-if best_f1 > cur["oof_f1_macro"] + 1e-6:
+if (not ensemble_path.exists()) or best_f1 > cur["oof_f1_macro"] + 1e-6:
     out = {
         "oof_f1_macro": float(best_f1),
         "n_folds": 10,
         "optimisation": "coordinate ascent, grid {0,0.25,0.5,0.75,1.0}",
         "models": final,
     }
-    (TAB / "ensemble_optimal_result.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
+    ensemble_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"\nensemble_optimal_result.json ACTUALIZADO ({cur['oof_f1_macro']:.4f} -> {best_f1:.4f})")
 else:
     print(f"\nSem melhoria vs {cur['oof_f1_macro']:.4f} - JSON mantido.")
