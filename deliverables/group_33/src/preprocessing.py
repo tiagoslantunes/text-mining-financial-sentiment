@@ -1,7 +1,4 @@
 """Text preprocessing pipeline for financial tweet classification.
-
-All techniques follow the professor's canonical implementation from Lab 1
-(SnowballStemmer, WordNetLemmatizer) and Lab Extra (TweetTokenizer for tweets).
 """
 
 import re
@@ -49,8 +46,8 @@ stemmer_snow = SnowballStemmer("english")
 tweet_tokenizer = TweetTokenizer(preserve_case=False, reduce_len=True, strip_handles=True)
 
 # Negations preserved following Manning et al. (2008) sentiment analysis guidance
-KEEP_NEGATIONS = {"not", "no", "never", "neither", "nor", "none"}
-
+KEEP_NEGATIONS = {"not", "no", "never", "neither", "nor", "none", 
+                  "n't", "nt", "dont", "wont", "cant"}
 
 def clean_twitter_noise(text: str) -> str:
     """Remove Twitter-specific noise (URLs, mentions, cashtags, hashtags, HTML entities).
@@ -68,11 +65,14 @@ def clean_twitter_noise(text: str) -> str:
 
 
 def normalize_text(text: str) -> str:
-    """NFKD Unicode normalization + ASCII conversion + lowercase."""
+    # Expand contractions BEFORE stripping apostrophes
+    text = re.sub(r"don't|dont", "do not", text, flags=re.IGNORECASE)
+    text = re.sub(r"won't|wont", "will not", text, flags=re.IGNORECASE)
+    text = re.sub(r"can't|cant", "cannot", text, flags=re.IGNORECASE)
+    text = re.sub(r"n't", " not", text, flags=re.IGNORECASE)
     text = unicodedata.normalize("NFKD", text)
     text = text.encode("ascii", "ignore").decode("ascii")
     return text.lower()
-
 
 def remove_stopwords(tokens: list) -> list:
     """Remove stopwords, preserving negations (Manning et al., 2008)."""
@@ -80,12 +80,12 @@ def remove_stopwords(tokens: list) -> list:
 
 
 def lemmatize_tokens(tokens: list) -> list:
-    """WordNetLemmatizer — same as professor's Lab 1 implementation."""
+    """WordNetLemmatizer — inspired by professor's Lab 1 implementation."""
     return [lemmatizer.lemmatize(t) for t in tokens]
 
 
 def stem_tokens(tokens: list) -> list:
-    """SnowballStemmer — same as professor's Lab 1 implementation."""
+    """SnowballStemmer — inspired by professor's Lab 1 implementation."""
     return [stemmer_snow.stem(t) for t in tokens]
 
 
@@ -99,7 +99,7 @@ def full_pipeline(
     use_lemmatize: bool = True,
     use_stem: bool = False,
 ) -> str:
-    """Full preprocessing pipeline: clean → normalize → tokenize → filter → reduce.
+    """Full preprocessing pipeline: clean -> normalize -> tokenize -> filter -> reduce.
 
     Args:
         text: Raw tweet string.
