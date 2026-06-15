@@ -1,6 +1,0 @@
-{
-  "class_weight_f1": 0.793,
-  "smote_f1": 0.7993,
-  "delta": 0.0063,
-  "conclusion": "SMOTE melhor"
-}
