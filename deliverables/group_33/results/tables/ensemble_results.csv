@@ -1,0 +1,9 @@
+tag,method,n_models,stage,F1-macro,Accuracy
+ensemble_8_coord_ascent,soft_vote_coord_ascent,8,main,0.920147391757116,0.9357
+ensemble_8_soft_equal,soft_vote_equal,8,main,0.9191,
+stacking_lr_5models,stacking_lr_meta,5,main,0.9168385285493269,
+softavg_5models,soft_vote_equal,5,main,0.9143999427252911,
+ensemble_6_mixed,soft_vote_equal,6,historical_mixed,0.9143,
+stacking_6_mixed,stacking_lr_meta,6,historical_mixed,0.9168,
+stacking_5_frozen,stacking_lr_meta,5,historical_frozen,0.8269,
+softavg_6_frozen,soft_vote_equal,6,historical_frozen,0.8412,

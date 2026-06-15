@@ -1,0 +1,16 @@
+tag,model_id,phase,n_folds,epochs,lr,fix_text,llrd,in_ensemble,F1-macro,F1-macro_std,Accuracy,Precision-macro,Recall-macro,elapsed_min
+finbert_fintwitter,nickmuchi/finbert-tone-finetuned-fintwitter-classification,tuning_10fold,10,5,1e-05,False,False,True,0.902514460108804,0.008580745026661623,0.9243424499633239,0.8909589313163156,0.9153267274609566,20.012961761156717
+finbert_fintwitter_7ep,nickmuchi/finbert-tone-finetuned-fintwitter-classification,tuning_10fold,10,7,5e-06,False,False,True,0.9048721783945495,0.009005838548581412,0.9264382269726501,0.8961326099159717,0.9143762739901361,27.944882980982463
+finbert_fintwitter_10ep,nickmuchi/finbert-tone-finetuned-fintwitter-classification,tuning_10fold,10,10,5e-06,False,False,True,0.9056361611037936,0.008376061200662909,0.9274861154773132,0.8969607711627813,0.915093028458851,39.59594777822495
+finbert_fintwitter_10ep_fixtext,nickmuchi/finbert-tone-finetuned-fintwitter-classification,tuning_10fold,10,10,5e-06,True,False,True,0.9082470696635333,0.009791253713068798,0.9292675259352405,0.9007657531530259,0.9163105976132159,39.65860238869985
+deberta_base_finance_fixtext,yiyanghkust/finbert-pretrain,tuning_10fold,10,8,1e-05,True,False,True,0.8714640473954155,0.007156041674310253,0.894687205281358,0.8589915670696388,0.8854758524692504,48.08247562646866
+debertav3_large_6ep,microsoft/deberta-v3-large,tuning_10fold,10,6,1e-05,False,False,True,0.888226002956135,0.007678060272642063,0.9099863774494393,0.8834585775429353,0.8931910416449288,127.96287631193796
+debertav3_large_6ep_fixtext,microsoft/deberta-v3-large,tuning_10fold,10,6,1e-05,True,False,True,0.8888915039751458,0.012098986299111587,0.9107198994027036,0.8835254987625681,0.8945275539432248,123.12632708946863
+roberta_large_ts_v2,cardiffnlp/twitter-roberta-large-topic-sentiment-latest,tuning_10fold,10,10,5e-06,True,False,True,0.8943015763339028,0.01003575304181475,0.9140731426176255,0.8857228197988959,0.9035532428466628,52.957647919654846
+roberta_large_screen,cardiffnlp/twitter-roberta-large-topic-sentiment-latest,screening,5,10,5e-06,True,False,False,0.8873305491091351,0.0049089784806846,0.9090432777952426,0.8795581947111355,0.8957516471472718,
+roberta_large_2022_screen,cardiffnlp/twitter-roberta-base-2022-154m,screening,5,5,1e-05,False,False,False,0.8858848452022446,0.0065864478602818,0.9079953892905794,0.8754420060423872,0.8974766752451983,
+debertav3_base_screen,microsoft/deberta-v3-base,screening,5,5,1e-05,False,False,False,0.8652609762748961,0.0064737665668258,0.8899717070103741,0.8505584336820785,0.8822309099219697,
+roberta_base_screen,cardiffnlp/twitter-roberta-base-sentiment-latest,screening,5,5,1e-05,False,False,False,0.855024386274844,0.0069436173795863,0.8809598658702714,0.8351240851426849,0.8800009668664277,
+stocktwits_screen,StockTwits/roberta-base-financial-sentiment,screening,5,5,1e-05,False,False,False,0.8429891987947157,0.0117470836808205,0.8709001362255057,0.8303194917480705,0.8576693546338973,
+roberta_base_sent_screen,cardiffnlp/twitter-roberta-base-sentiment-latest,screening,5,5,1e-05,False,False,False,0.8399177266142361,0.0062044176103386,0.8691187257675783,0.8187517883426333,0.8671440382803567,
+finbert_fintwitter_15ep_fixtext,nickmuchi/finbert-tone-finetuned-fintwitter-classification,screening,5,15,5e-06,True,False,False,0.905,0.009,0.924,0.895,0.916,55.0
