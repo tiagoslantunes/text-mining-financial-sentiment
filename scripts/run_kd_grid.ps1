@@ -1,5 +1,4 @@
-$base = "C:\Users\tiago\OneDrive - NOVAIMS\Ambiente de Trabalho\textmining\group_33"
-Set-Location $base
+Set-Location (Resolve-Path (Join-Path $PSScriptRoot '..'))
 
 # KD hyperparameter grid - 3-fold proxy (~12 min each)
 # Baseline reference (a=0.5, T=2): folds 1-3 were [0.9101, 0.9078, 0.8999], mean 0.9060

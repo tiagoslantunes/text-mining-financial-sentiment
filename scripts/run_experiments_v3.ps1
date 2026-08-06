@@ -1,5 +1,4 @@
-$base = "C:\Users\tiago\OneDrive - NOVAIMS\Ambiente de Trabalho\textmining\group_33"
-Set-Location $base
+Set-Location (Resolve-Path (Join-Path $PSScriptRoot '..'))
 
 # EXP A: FinBERT 15ep fix-text, lr=2e-6 (lower LR for longer training)
 Write-Host "=== EXP A: FinBERT 15ep fix-text lr=2e-6 ===" -ForegroundColor Cyan
