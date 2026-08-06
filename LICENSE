@@ -1,0 +1,13 @@
+Copyright (c) 2026 Alexandra Varela, Francisca Fernandes, Mariana Melo,
+and Tiago Antunes. All rights reserved.
+
+This repository is made publicly available for educational, research, and
+portfolio viewing purposes. No permission is granted to copy, modify,
+distribute, sublicense, or sell the original code, documentation, or other
+materials in this repository, except where permitted by applicable law or
+with prior written permission from all copyright holders.
+
+Third-party datasets, models, libraries, and other dependencies remain subject
+to their respective licenses and terms. In particular, the upstream Twitter
+Financial News Sentiment dataset is made available under the MIT License; the
+course-provided train/test split in `data/raw/` remains subject to that license.

@@ -1,0 +1,18 @@
+{
+  "oof_f1_macro": 0.9183957146786758,
+  "models": {
+    "finbert_fintwitter_10ep_fixtext": 1.0,
+    "finbert_fintwitter_10ep": 1.0,
+    "finbert_fintwitter_7ep": 1.0,
+    "finbert_fintwitter": 1.0,
+    "roberta_large_ts_v2": 1.0,
+    "debertav3_large_6ep": 1.0,
+    "deberta_base_finance_fixtext": 0.5,
+    "debertav3_large_6ep_fixtext": 1.0
+  },
+  "test_dist": [
+    387,
+    496,
+    1505
+  ]
+}

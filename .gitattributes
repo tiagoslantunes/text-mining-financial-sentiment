@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+*.ipynb linguist-detectable=false
+*.csv text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.ps1 text eol=crlf
+*.pdf binary
+*.xlsx binary
+*.png binary
+*.pkl binary
+*.npy binary

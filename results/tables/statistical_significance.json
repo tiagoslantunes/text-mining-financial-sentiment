@@ -1,0 +1,26 @@
+{
+  "wilcoxon_best_vs_second": {
+    "statistic": 43.0,
+    "p_value": 0.0654296875
+  },
+  "bootstrap_best_vs_second_ci95": [
+    -0.0009804497436499832,
+    0.007279895678000167
+  ],
+  "bootstrap_ensemble_vs_best_ci95": [
+    0.006615385201297247,
+    0.017214261465802835
+  ],
+  "ensemble_oof_f1": 0.920147391757116,
+  "best_oof_f1": 0.9082470696635333,
+  "n_bootstrap": 1000,
+  "bootstrap_distilled_vs_bestplain_ci95": [
+    0.0023383322983397017,
+    0.009436677768514671
+  ],
+  "bootstrap_ensemble_vs_distilled_ci95": [
+    0.001782521088208175,
+    0.012002754837987397
+  ],
+  "distilled_oof_f1": 0.9139378963455097
+}

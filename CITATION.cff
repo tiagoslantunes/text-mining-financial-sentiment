@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it using this metadata."
+title: "Financial Tweet Sentiment Classification"
+type: software
+version: 1.0.0
+authors:
+  - given-names: Alexandra
+    family-names: Varela
+  - given-names: Francisca
+    family-names: Fernandes
+  - given-names: Mariana
+    family-names: Melo
+  - given-names: Tiago
+    family-names: Antunes
+repository-code: "https://github.com/tiagoslantunes/text-mining-financial-sentiment"
+url: "https://github.com/tiagoslantunes/text-mining-financial-sentiment"
+abstract: >-
+  An end-to-end study of three-class financial tweet sentiment classification,
+  covering data quality, classical NLP, transformer fine-tuning, ensembling,
+  knowledge distillation, and an offline agentic routing workflow.
+keywords:
+  - financial sentiment
+  - text mining
+  - natural language processing
+  - transformers
+  - knowledge distillation
+  - FinBERT

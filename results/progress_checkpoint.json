@@ -1,0 +1,28 @@
+{
+  "phase_1": {
+    "done": true,
+    "timestamp": 1781100781.0557454,
+    "ensemble_f1": 0.920147391757116,
+    "n_models": 8
+  },
+  "phase_2_analysis": {
+    "done": true,
+    "timestamp": 1781100918.1824846
+  },
+  "phase_2_features": {
+    "done": true,
+    "timestamp": 1781101487.5443296,
+    "sbert_only_f1": 0.793,
+    "fusion_f1": 0.7962,
+    "gain": 0.0032,
+    "class_weight_f1": 0.793,
+    "smote_f1": 0.7993,
+    "delta": 0.0063,
+    "conclusion": "SMOTE melhor"
+  },
+  "phase_final_submission": {
+    "done": true,
+    "timestamp": 1781190036.294547,
+    "oof_f1": 0.9139378963455097
+  }
+}
