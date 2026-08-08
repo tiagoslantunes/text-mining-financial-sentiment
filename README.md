@@ -1,19 +1,21 @@
+<div align="center">
+
 # Financial Tweet Sentiment Classification
 
-<p align="center">
-  <strong>From sparse NLP baselines to transformer ensembles and knowledge distillation.</strong><br>
-  An end-to-end study of Bearish, Bullish, and Neutral sentiment in financial social media.
-</p>
+**From sparse NLP baselines to transformer ensembles and knowledge distillation.**
+An end-to-end study of Bearish, Bullish, and Neutral sentiment in financial social media.
 
-<p align="center">
-  <a href="https://www.python.org/downloads/release/python-3110/"><img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white"></a>
-  <a href="https://github.com/tiagoslantunes/text-mining-financial-sentiment/actions/workflows/quality.yml"><img alt="Quality checks" src="https://github.com/tiagoslantunes/text-mining-financial-sentiment/actions/workflows/quality.yml/badge.svg"></a>
-  <a href="https://huggingface.co/datasets/zeroshot/twitter-financial-news-sentiment"><img alt="Dataset on Hugging Face" src="https://img.shields.io/badge/Dataset-Hugging%20Face-FFD21E?logo=huggingface&logoColor=black"></a>
-  <img alt="NOVA IMS course project" src="https://img.shields.io/badge/NOVA%20IMS-Text%20Mining-00A36C">
-</p>
+[![Quality checks](https://github.com/tiagoslantunes/text-mining-financial-sentiment/actions/workflows/quality.yml/badge.svg)](https://github.com/tiagoslantunes/text-mining-financial-sentiment/actions/workflows/quality.yml)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3110/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-transformers-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Dataset](https://img.shields.io/badge/dataset-Hugging_Face-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/zeroshot/twitter-financial-news-sentiment)
+[![License](https://img.shields.io/badge/license-all_rights_reserved-6c757d)](LICENSE)
+
+</div>
 
 Developed at NOVA Information Management School for the 2025/2026 Text Mining course, this group project received the maximum mark. It evaluates the complete NLP workflow: data quality, preprocessing, feature engineering, classical machine learning, transformer fine-tuning, ensembling, knowledge distillation, and an offline agentic routing experiment.
 
+> [!NOTE]
 > This is a research and educational artifact, not financial advice or a trading system.
 
 ## Highlights
@@ -41,20 +43,24 @@ The submitted model retains most of the eight-encoder teacher's performance at s
 5. **Ensembling and compression** — coordinated soft voting followed by knowledge distillation into a single FinBERT student.
 6. **Agentic workflow** — adaptive routing between VADER, LightGBM + SBERT, and FinBERT without proprietary APIs.
 
-## Repository guide
+## Project structure
 
 | Path | Purpose |
 |---|---|
 | [`tm_tests_33.ipynb`](tm_tests_33.ipynb) | Executed experiment notebook: EDA, ablations, models, ensembles, and statistical analysis |
 | [`tm_final_33.ipynb`](tm_final_33.ipynb) | Compact submitted pipeline and reproducible prediction artifact |
-| [`notebooks/08_Agentic_Workflow.ipynb`](notebooks/08_Agentic_Workflow.ipynb) | Offline adaptive-routing agent demonstration |
+| [`notebooks/`](notebooks) | Offline adaptive-routing agent demonstration |
 | [`src/`](src) | Reusable preprocessing, feature, evaluation, and agent modules |
 | [`scripts/`](scripts) | Training, distillation, ensembling, and analysis entry points |
 | [`results/`](results) | Committed metrics, figures, and prediction caches |
-| [`docs/report.pdf`](docs/report.pdf) | Final academic report |
+| [`figures/`](figures) | Exploratory data analysis figures |
+| [`docs/`](docs) | Final academic report and reproducibility guide |
+| [`tests/`](tests) | Artifact and label-consistency checks |
 | [`MODEL_CARD.md`](MODEL_CARD.md) | Intended use, evaluation, limitations, and responsible-use notes |
 
-The notebooks include their executed outputs, so the full analysis can be reviewed without downloading model weights or using a GPU.
+Notebooks are executed from the repository root, so their relative paths to `data/`, `src/`,
+and `results/` resolve. They include their stored outputs, so the full analysis can be reviewed
+without downloading model weights or using a GPU.
 
 ## Quick start
 
@@ -91,7 +97,11 @@ The local files preserve the course-provided train/test format and contain some 
 - The final submission, synchronized prediction copies, and class labels are covered by automated tests.
 - Large neural-model weights and dense intermediate embeddings are intentionally excluded; compact metrics, probability caches, and the lightweight agent model are committed.
 
-Run the repository checks with:
+## Quality checks
+
+Every push runs [`quality.yml`](.github/workflows/quality.yml) on GitHub Actions, which verifies
+the committed artifacts and label consistency without needing a GPU. To run the same checks
+locally:
 
 ```bash
 python -m pip install -r requirements-test.txt
@@ -107,6 +117,6 @@ python -m unittest discover -s tests -v
 
 See [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata. Contributions and project context are documented in the notebooks and report.
 
-## Licensing
+## License
 
 The upstream dataset has its own MIT license. The original code and written material in this repository are shared for viewing under an all-rights-reserved notice; see [LICENSE](LICENSE). Reuse beyond what copyright law permits requires the authors' prior written permission.
