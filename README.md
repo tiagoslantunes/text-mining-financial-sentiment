@@ -18,6 +18,13 @@ Developed at NOVA Information Management School for the 2025/2026 Text Mining co
 > [!NOTE]
 > This is a research and educational artifact, not financial advice or a trading system.
 
+## Start here
+
+Open [tm_final_33.ipynb](tm_final_33.ipynb) for the submitted pipeline,
+[tm_tests_33.ipynb](tm_tests_33.ipynb) for experimental evidence, and the
+[model card](MODEL_CARD.md) for intended use and limitations. Stored notebook outputs
+and the results below are available to read without a GPU or a local installation.
+
 ## Highlights
 
 | | Result |
@@ -93,7 +100,7 @@ The local files preserve the course-provided train/test format and contain some 
 
 - All randomised experiments use seed `42`.
 - Transformer comparisons use identical stratified folds where probability-level comparison is required.
-- Reported transformer metrics are out-of-fold, so every prediction comes from a model that did not train on that sample.
+- Reported transformer metrics are out-of-fold, so each base prediction comes from a model that did not train on that sample. Model and ensemble selection also use these OOF results; they are not an independent estimate after selection.
 - The final submission, synchronized prediction copies, and class labels are covered by automated tests.
 - Large neural-model weights and dense intermediate embeddings are intentionally excluded; compact metrics, probability caches, and the lightweight agent model are committed.
 
@@ -116,6 +123,10 @@ python -m unittest discover -s tests -v
 - Tiago Antunes
 
 See [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata. Contributions and project context are documented in the notebooks and report.
+
+The original group development and final-submission commits have been recovered
+alongside the current public release. See [project history and authorship](docs/history.md)
+for the recovery details; the final artifacts remain at the paths documented above.
 
 ## License
 
